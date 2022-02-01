@@ -9,8 +9,8 @@
 
 #SBATCH --job-name=metaicl-reproduce-results
 
-## This places the standard output and standard error into the same file, in this case slurm_<job_id>_<arr_idx>.out 
-#SBATCH --output=/scratch/jc11431/slurm_logs/slurm_%A_%a.out
+## This places the standard output and standard error into the same file, in this case slurm_<job_id>.out 
+#SBATCH --output=/scratch/jc11431/slurm_logs/slurm_%A.out
 
 ## First we ensure a clean environment by purging the current one
 module purge

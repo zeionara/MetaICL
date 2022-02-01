@@ -9,5 +9,5 @@ do
 
     # MetaICL
     sbatch train.sbatch $setting_name metaicl
-    # sbatch train.sbatch $setting_name channel-metaicl
+    sbatch train.sbatch $setting_name channel-metaicl
 done
