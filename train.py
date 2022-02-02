@@ -17,6 +17,7 @@ import numpy as np
 
 from collections import Counter, defaultdict
 
+import wandb
 from transformers import GPT2Tokenizer, AutoTokenizer
 
 from metaicl.data import MetaICLData
@@ -64,6 +65,8 @@ def main(logger, args):
 
     ######## actual training part
 
+    wandb.init(project="metaicl", entity="junshern")
+
     random.seed(args.train_seed)
     np.random.seed(args.train_seed)
     torch.manual_seed(args.train_seed)
@@ -72,7 +75,7 @@ def main(logger, args):
 
     num_training_steps = args.num_training_steps
     save_period = 10000
-    log_period = 1000
+    log_period = 50
 
     if args.no_masking:
         metaicl_data.tensorized_inputs["token_type_ids"] = torch.ones_like(metaicl_data.tensorized_inputs["input_ids"])

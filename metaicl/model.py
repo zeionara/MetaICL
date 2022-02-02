@@ -9,6 +9,7 @@ import os
 import torch
 import torch.nn.functional as F
 
+import wandb
 from tqdm import tqdm
 from transformers import Adafactor, AdamW, get_linear_schedule_with_warmup
 from transformers import AutoModelForCausalLM
@@ -120,7 +121,7 @@ class MetaICLModel(object):
             model_state_dict = {key[7:] if key.startswith("module.") else key: value.cpu()
                                 for key, value in self.model.state_dict().items()}
             torch.save(model_state_dict, os.path.join(self.out_dir, "model-{}.pt".format(step)))
-            self.logger.info("Saving model parameters at step=%d" % step)
+            self.logger.info(f"Saving model parameters at step={step}")
 
     def setup_optimizer(self, optimization, num_training_steps, lr, weight_decay, warmup_steps):
         no_decay = ['bias', 'LayerNorm.weight']
@@ -174,58 +175,100 @@ class MetaICLModel(object):
 
 
     def do_train(self, data, batch_size, num_training_steps, save_period, log_period,
-                 gradient_accumulation_steps=1, max_grad_norm=1.0):
-        dataloader = data.get_dataloader(batch_size, is_training=True)
+                 gradient_accumulation_steps=1, max_grad_norm=1.0, val_split=0.001):
+        if val_split is not None:
+            dataloader, val_loader = data.get_dataloader(batch_size, is_training=True, val_split=val_split)
+        else:
+            dataloader = data.get_dataloader(batch_size, is_training=True)
         n_trainable_params = len([param for param in self.model.parameters() if param.requires_grad])
         n_gpus = torch.cuda.device_count()
         self.logger.info("Training {} parameters on {} examples for {} steps using {} GPUs".format(
             n_trainable_params, len(data), num_training_steps, self.n_gpu))
 
-        global_step = 0
+        global_step = -1
         train_losses = []
         best_accuracy = -1
+        best_val_loss = np.inf
         stop_training=False
 
-        for epoch in range(num_training_steps):
+        epoch = 0
+        while True: 
+            self.logger.info(f"Epoch {epoch}")
             for batch in dataloader:
                 global_step += 1
+                epoch = global_step / float(len(dataloader))
 
-                input_ids=batch[0].to(self.device)
-                attention_mask=batch[1].to(self.device)
-                token_type_ids=batch[2].to(self.device)
-                if len(batch)==3:
-                    labels=None
-                else:
-                    labels=batch[3].to(self.device)
+                if global_step != 0: # Don't train on the first pass, we want to evaluate the pretrained model state
 
-                loss = self.run_model(input_ids, attention_mask, token_type_ids, labels=labels)
-                loss = loss.mean()
+                    input_ids=batch[0].to(self.device)
+                    attention_mask=batch[1].to(self.device)
+                    token_type_ids=batch[2].to(self.device)
+                    if len(batch)==3:
+                        labels=None
+                    else:
+                        labels=batch[3].to(self.device)
 
-                if torch.isnan(loss).data:
-                    print ("Stop training because loss=%s" % (loss.data))
-                    stop_training=True
-                    break
-                train_losses.append(loss.detach().cpu())
+                    loss = self.run_model(input_ids, attention_mask, token_type_ids, labels=labels)
+                    loss = loss.mean()
 
-                if self.fp16:
-                    from apex import amp
-                    with amp.scale_loss(loss, self.optimizer) as scaled_loss:
-                        scaled_loss.backward()
-                else:
-                    loss.backward()
+                    if torch.isnan(loss).data:
+                        print ("Stop training because loss=%s" % (loss.data))
+                        stop_training=True
+                        break
+                    train_losses.append(loss.detach().cpu())
 
-                if global_step % gradient_accumulation_steps == 0:
-                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_grad_norm)
+                    if self.fp16:
+                        from apex import amp
+                        with amp.scale_loss(loss, self.optimizer) as scaled_loss:
+                            scaled_loss.backward()
+                    else:
+                        loss.backward()
 
-                    self.optimizer.step()    # We have accumulated enought gradients
-                    if self.scheduler is not None:
-                        self.scheduler.step()
-                    self.model.zero_grad()
+                    if global_step % gradient_accumulation_steps == 0:
+                        torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_grad_norm)
+
+                        self.optimizer.step()    # We have accumulated enought gradients
+                        if self.scheduler is not None:
+                            self.scheduler.step()
+                        self.model.zero_grad()
 
                 if global_step % log_period == 0:
-                    self.logger.info("local rank %d\tglobal step %d\ttrain loss %.2f" % (self.local_rank, global_step, np.mean(train_losses)))
+                    train_loss = np.mean(train_losses)
+                    self.logger.info("local rank %d\tglobal step %d\ttrain loss %.2f" % (self.local_rank, global_step, train_loss))
                     train_losses = []
 
+                    # Get validation loss
+                    self.model.eval()
+                    with torch.no_grad():
+                        val_losses = []
+                        for batch_idx, vbatch in enumerate(val_loader):
+
+                            input_ids=vbatch[0].to(self.device)
+                            attention_mask=vbatch[1].to(self.device)
+                            token_type_ids=vbatch[2].to(self.device)
+                            if len(vbatch)==3:
+                                labels=None
+                            else:
+                                labels=vbatch[3].to(self.device)
+
+                            val_loss = self.run_model(input_ids, attention_mask, token_type_ids, labels=labels)
+                            val_losses.append(val_loss.item())
+                        val_loss = np.mean(val_losses)
+                        self.logger.info("val_loss %.2f" % (val_loss))
+                    self.model.train()
+                    
+                    wandb.log({
+                        "global_step": global_step,
+                        "epoch": epoch,
+                        "train/loss": train_loss,
+                        "val/loss": val_loss,
+                    })
+
+                    if val_loss < best_val_loss:
+                        best_val_loss = val_loss
+                        self.save(f"best_val_loss-{global_step}")
+                        wandb.run.summary["best_val_loss"] = best_val_loss
+                
                 if global_step % save_period == 0:
                     self.save(global_step)
 

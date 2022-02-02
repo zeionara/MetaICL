@@ -18,6 +18,9 @@ from functools import partial
 from multiprocessing import Pool
 
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
+from torch.utils.data.sampler import SubsetRandomSampler
+
+import wandb
 
 class MetaICLData(object):
 
@@ -65,7 +68,7 @@ class MetaICLData(object):
             text += self.print_tensorized_example(return_string=True)
         return ("="*50) + "\n" + text + "\n" + ("="*50)
 
-    def get_dataloader(self, batch_size, is_training):
+    def get_dataloader(self, batch_size, is_training, val_split=None):
         inputs = self.tensorized_inputs
         for k, v in inputs.items():
             if type(v)==list:
@@ -78,12 +81,25 @@ class MetaICLData(object):
             dataset = TensorDataset(inputs["input_ids"], inputs["attention_mask"], inputs["token_type_ids"], inputs["labels"])
         else:
             dataset = TensorDataset(inputs["input_ids"], inputs["attention_mask"], inputs["token_type_ids"])
-        if is_training:
-            sampler=RandomSampler(dataset)
+
+        if is_training and val_split is not None:
+            # We will return two dataloaders, one for train and one for val
+            val_size = int(val_split * len(dataset))
+            train_size = len(dataset) - val_size
+            train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
+
+            train_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
+                                                        sampler=RandomSampler(train_dataset))
+            validation_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
+                                                            sampler=RandomSampler(val_dataset))
+            return train_loader, validation_loader
         else:
-            sampler=SequentialSampler(dataset)
-        dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
-        return dataloader
+            if is_training:
+                sampler=RandomSampler(dataset)
+            else:
+                sampler=SequentialSampler(dataset)
+            dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
+            return dataloader
 
     def evaluate(self, predictions, groundtruths, is_classification):
         assert len(predictions)==len(self.metadata)
