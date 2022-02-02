@@ -175,7 +175,7 @@ class MetaICLModel(object):
 
 
     def do_train(self, data, batch_size, num_training_steps, save_period, log_period,
-                 gradient_accumulation_steps=1, max_grad_norm=1.0, val_split=0.001):
+                 gradient_accumulation_steps=1, max_grad_norm=1.0, val_split=0.1):
         if val_split is not None:
             dataloader, val_loader = data.get_dataloader(batch_size, is_training=True, val_split=val_split)
         else:
