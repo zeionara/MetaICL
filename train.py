@@ -74,7 +74,7 @@ def main(logger, args):
         torch.cuda.manual_seed_all(args.train_seed)
 
     num_training_steps = args.num_training_steps
-    save_period = 10000
+    save_period = 5000
     log_period = 50
 
     if args.no_masking:
