@@ -18,7 +18,6 @@ from functools import partial
 from multiprocessing import Pool
 
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
-from torch.utils.data.sampler import SubsetRandomSampler
 
 import wandb
 
@@ -88,10 +87,8 @@ class MetaICLData(object):
             train_size = len(dataset) - val_size
             train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
 
-            train_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, 
-                                                        sampler=RandomSampler(train_dataset))
-            validation_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
-                                                            sampler=RandomSampler(val_dataset))
+            train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size)
+            validation_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size)
             return train_loader, validation_loader
         else:
             if is_training:
