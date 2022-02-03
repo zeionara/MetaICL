@@ -206,6 +206,7 @@ class MetaICLModel(object):
                 global_step += 1
                 epoch = global_step / float(len(dataloader))
 
+                # TODO: Handle this better, don't waste the first training batch
                 if global_step != 0: # Don't train on the first pass, we want to evaluate the pretrained model state
 
                     input_ids=batch[0].to(self.device)

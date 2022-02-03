@@ -113,18 +113,18 @@ def main(logger, args):
 if __name__=='__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--do_tensorize", default=False, action="store_true")
+    parser.add_argument("--do_tensorize", default=True, action="store_true")
     parser.add_argument("--tensorize_dir", type=str, default="tensorized")
-    parser.add_argument("--n_gpu", type=int, default=8)
-    parser.add_argument("--n_process", type=int, default=40)
+    parser.add_argument("--n_gpu", type=int, default=1)
+    parser.add_argument("--n_process", type=int, default=8)
     parser.add_argument("--max_length_per_example", type=int, default=256)
     parser.add_argument("--max_length", type=int, default=256)
 
-    parser.add_argument("--use_demonstrations", default=False, action="store_true")
+    parser.add_argument("--use_demonstrations", default=True, action="store_true")
     parser.add_argument("--log_file", default=None, type=str)
 
     parser.add_argument("--num_training_steps", type=int, default=30000)
-    parser.add_argument("--validation_split", type=float, default=None)
+    parser.add_argument("--validation_split", type=float, default=0.01)
     parser.add_argument("--save_period", type=int, default=5000)
     parser.add_argument("--log_period", type=int, default=50)
 
@@ -144,15 +144,19 @@ if __name__=='__main__':
     parser.add_argument("--weight_decay", type=float, default=0.0)
     parser.add_argument("--no_masking", default=False, action="store_true")
 
-    parser.add_argument("--out_dir", type=str, default="checkpoints")
+    parser.add_argument("--out_dir", type=str, default=None)
     parser.add_argument("--method", type=str, default="direct", choices=["direct", "channel"])
     parser.add_argument("--gpt2", type=str, default="gpt2-large")
 
-    parser.add_argument("--optimization", type=str, default="adamw")
-    parser.add_argument("--fp16", default=False, action="store_true")
+    parser.add_argument("--optimization", type=str, default="8bit-adam")
+    parser.add_argument("--fp16", default=True, action="store_true")
     parser.add_argument("--local_rank", type=int, default=-1, help="local_rank for distributed training on gpus")
 
     args = parser.parse_args()
+
+    if args.out_dir is None:
+        train_algo = args.train_algo if args.method == "direct" else f"channel-{args.train_algo}"
+        args.out_dir = "checkpoints/{train_algo}/{args.task}"
 
     handlers = [logging.StreamHandler()]
     if args.log_file is not None:

@@ -1,5 +1,5 @@
 {
-    "train": ["activision"],
+    "train": ["custom:activision", "custom:consumption"],
     "test": ["quarel", "financial_phrasebank", "openbookqa", "codah", "qasc", "glue-mrpc", "dream", "sick", "commonsense_qa", "medical_questions_pairs", "quartz-with_knowledge", "poem_sentiment", "quartz-no_knowledge", "glue-wnli", "climate_fever", "ethos-national_origin", "ethos-race", "ethos-religion", "ai2_arc", "hate_speech18", "glue-rte", "superglue-cb", "superglue-copa", "tweet_eval-hate", "tweet_eval-stance_atheism", "tweet_eval-stance_feminist"], 
     "unseen_domain_test": ["financial_phrasebank", "medical_questions_pairs", "poem_sentiment", "climate_fever"]
 }
