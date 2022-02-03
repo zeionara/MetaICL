@@ -175,11 +175,19 @@ class MetaICLModel(object):
 
 
     def do_train(self, data, batch_size, num_training_steps, save_period, log_period,
-                 gradient_accumulation_steps=1, max_grad_norm=1.0, val_split=0.1):
+                 gradient_accumulation_steps=1, max_grad_norm=1.0, val_split=None):
         if val_split is not None:
             dataloader, val_loader = data.get_dataloader(batch_size, is_training=True, val_split=val_split)
+            self.logger.info(f"len(dataloader) {len(dataloader)}")
+            self.logger.info(f"len(val_loader) {len(val_loader)}")
         else:
             dataloader = data.get_dataloader(batch_size, is_training=True)
+            self.logger.info(f"len(dataloader) {len(dataloader)}")
+        wandb.config.update({
+            'dataset_size': len(data),
+            'train_dataloader_size': len(dataloader),
+            'val_dataloader_size': len(val_loader),
+        })
         n_trainable_params = len([param for param in self.model.parameters() if param.requires_grad])
         n_gpus = torch.cuda.device_count()
         self.logger.info("Training {} parameters on {} examples for {} steps using {} GPUs".format(
