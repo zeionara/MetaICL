@@ -87,8 +87,8 @@ class MetaICLData(object):
             train_size = len(dataset) - val_size
             train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
 
-            train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size)
-            validation_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size)
+            train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+            validation_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
             return train_loader, validation_loader
         else:
             if is_training:
