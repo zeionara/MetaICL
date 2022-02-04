@@ -5,7 +5,7 @@ metric:
   goal: minimize
 parameters:
   task:
-    values: ['custom_setting']
+    values: ['hr_to_lr']
   gradient_accumulation_steps:
     values: [1, 8]
   lr:

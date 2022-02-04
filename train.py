@@ -57,12 +57,14 @@ def main(logger, args):
                                n_process=args.n_process, n_gpu=args.n_gpu, local_rank=args.local_rank)
     metaicl_data.tensorize_for_training(train_data, keyword=args.task, seed=args.seed)
 
-    if args.do_tensorize:
-        return
+    # if not args.do_tensorize: # Why this terrible logic flow?
+    #     return
 
     ######## actual training part
 
-    if 'SLURM_JOBID' in os.environ:
+    if 'SLURM_ARRAY_JOB_ID' in os.environ and 'SLURM_ARRAY_TASK_ID':
+        slurm_job_id = f"{os.environ['SLURM_ARRAY_JOB_ID']}_{os.environ['SLURM_ARRAY_TASK_ID']}"
+    elif 'SLURM_JOBID' in os.environ:
         slurm_job_id = os.environ['SLURM_JOBID']
     else:
         slurm_job_id = "localjob"
@@ -106,8 +108,8 @@ def main(logger, args):
         args.num_training_steps,
         args.save_period,
         args.log_period,
-        gradient_accumulation_steps = args.gradient_accumulation_steps=1,
-        max_grad_norm = args.max_grad_norm=1.0, 
+        gradient_accumulation_steps = args.gradient_accumulation_steps,
+        max_grad_norm = args.max_grad_norm, 
         val_split = args.validation_split)
 
 if __name__=='__main__':
@@ -128,6 +130,7 @@ if __name__=='__main__':
     parser.add_argument("--save_period", type=int, default=5000)
     parser.add_argument("--log_period", type=int, default=50)
 
+    parser.add_argument("--train_algo", type=str, default=None)
     parser.add_argument("--task", type=str, default="SST-2")
     parser.add_argument("--k", type=int, default=16384)
     parser.add_argument("--test_k", type=int, default=16)
@@ -154,9 +157,11 @@ if __name__=='__main__':
 
     args = parser.parse_args()
 
+    if args.train_algo is None:
+        args.train_algo = "metaicl" if args.use_demonstrations else "multitask-zero"
     if args.out_dir is None:
-        train_algo = args.train_algo if args.method == "direct" else f"channel-{args.train_algo}"
-        args.out_dir = "checkpoints/{train_algo}/{args.task}"
+        args.train_algo = args.train_algo if args.method == "direct" else f"channel-{args.train_algo}"
+        args.out_dir = "checkpoints/{args.train_algo}/{args.task}"
 
     handlers = [logging.StreamHandler()]
     if args.log_file is not None:
