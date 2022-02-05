@@ -19,7 +19,7 @@ module purge
 ## Load Anaconda
 module load anaconda3/2020.07
 source ~/.bashrc
-conda activate alignment
+conda activate metaicl
 
 ## Just log environment stats for diagnostics
 myquota
