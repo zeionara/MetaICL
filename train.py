@@ -57,8 +57,14 @@ def main(logger, args):
                                n_process=args.n_process, n_gpu=args.n_gpu, local_rank=args.local_rank)
     metaicl_data.tensorize_for_training(train_data, keyword=args.task, seed=args.seed)
 
-    # if not args.do_tensorize: # Why this terrible logic flow?
-    #     return
+    # TODO: This is terrible; either unify the functions or split them into entirely separate things!
+    ######### load tensorize data without do_tensorize
+    metaicl_data = MetaICLData(logger, tokenizer, args.method, args.use_demonstrations,
+                               args.test_k, max_length, args.max_length_per_example,
+                               do_tensorize=False,
+                               tensorize_dir=args.tensorize_dir,
+                               n_process=args.n_process, n_gpu=args.n_gpu, local_rank=args.local_rank)
+    metaicl_data.tensorize_for_training(train_data, keyword=args.task, seed=args.seed)
 
     ######## actual training part
 
