@@ -94,14 +94,14 @@ def main(logger, args):
 
     if args.no_masking:
         metaicl_data.tensorized_inputs["token_type_ids"] = torch.ones_like(metaicl_data.tensorized_inputs["input_ids"])
-    metaicl_data.print_tensorized_example()
+    # metaicl_data.print_tensorized_example()
 
     logger.info(args.out_dir)
 
     if not os.path.exists(args.out_dir):
         os.makedirs(args.out_dir)
 
-    metaicl_model = MetaICLModel(logger, args.out_dir, args.fp16, args.local_rank)
+    metaicl_model = MetaICLModel(logger, args.out_dir, args.fp16, args.local_rank, model_id=slurm_job_id, task=args.task)
     metaicl_model.load(args.init_checkpoint, args.gpt2)
     metaicl_model.to_device()
     metaicl_model.setup_optimizer(args.optimization, args.num_training_steps, args.lr,
@@ -132,9 +132,9 @@ if __name__=='__main__':
     parser.add_argument("--log_file", default=None, type=str)
 
     parser.add_argument("--num_training_steps", type=int, default=30000)
-    parser.add_argument("--validation_split", type=float, default=0.01)
-    parser.add_argument("--save_period", type=int, default=5000)
-    parser.add_argument("--log_period", type=int, default=50)
+    parser.add_argument("--validation_split", type=float, default=0.001)
+    parser.add_argument("--save_period", type=int, default=10000)
+    parser.add_argument("--log_period", type=int, default=500)
 
     parser.add_argument("--train_algo", type=str, default=None)
     parser.add_argument("--task", type=str, default="SST-2")
@@ -167,7 +167,7 @@ if __name__=='__main__':
         args.train_algo = "metaicl" if args.use_demonstrations else "multitask-zero"
     if args.out_dir is None:
         args.train_algo = args.train_algo if args.method == "direct" else f"channel-{args.train_algo}"
-        args.out_dir = "checkpoints/{args.train_algo}/{args.task}"
+        args.out_dir = f"checkpoints/{args.train_algo}/{args.task}"
 
     handlers = [logging.StreamHandler()]
     if args.log_file is not None:

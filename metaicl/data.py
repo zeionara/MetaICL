@@ -73,7 +73,7 @@ class MetaICLData(object):
             if type(v)==list:
                 inputs[k] = torch.LongTensor(v)
         shape = inputs["input_ids"].shape
-        self.logger.info(shape)
+        self.logger.info(f"inputs['input_ids'].shape {shape}")
         for v in inputs.values():
             assert v.shape==shape
         if "labels" in inputs:
@@ -84,19 +84,24 @@ class MetaICLData(object):
         if is_training and val_split is not None:
             # We will return two dataloaders, one for train and one for val
             val_size = int(val_split * len(dataset))
+            self.logger.info(f"val_split {val_split}")
+            self.logger.info(f"len(dataset) {len(dataset)}")
+            self.logger.info(f"val_size {val_size}")
             train_size = len(dataset) - val_size
             train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
 
             train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
             validation_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+            self.logger.info(f"len(train_loader) {len(train_loader)}")
+            self.logger.info(f"len(validation_loader) {len(validation_loader)}")
             return train_loader, validation_loader
-        else:
-            if is_training:
-                sampler=RandomSampler(dataset)
-            else:
-                sampler=SequentialSampler(dataset)
-            dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
-            return dataloader
+        elif is_training and val_split is None:
+            sampler=RandomSampler(dataset)
+        else: # Don't shuffle during test time
+            sampler=SequentialSampler(dataset)
+        dataloader = DataLoader(dataset, sampler=sampler, batch_size=batch_size)
+        self.logger.info(f"len(dataloader) {len(dataloader)}")
+        return dataloader
 
     def evaluate(self, predictions, groundtruths, is_classification):
         assert len(predictions)==len(self.metadata)
