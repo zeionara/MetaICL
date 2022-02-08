@@ -22,11 +22,10 @@ from torch.utils.data import TensorDataset, DataLoader, SequentialSampler
 from transformers import GPT2Tokenizer, AutoTokenizer
 
 from metaicl.data import MetaICLData
-from metaicl.model import MetaICLModel
 
 from utils.data import load_data
 
-def main(logger, args):
+def main(logger, args, metaicl_model=None):
     if args.gpt2.startswith("gpt2"):
         tokenizer = GPT2Tokenizer.from_pretrained(args.gpt2)
     else:
@@ -45,7 +44,11 @@ def main(logger, args):
     else:
         checkpoint = None
         add_newlines = args.gpt2=="gpt-j-6B"
-    metaicl_model = MetaICLModel(logger, args.out_dir)
+    if metaicl_model is None:
+        # This test function may be called from MetaICLModel, in which case
+        # don't import this (to avoid circular dependencies)
+        from metaicl.model import MetaICLModel
+        metaicl_model = MetaICLModel(logger, args.out_dir)
 
     if not os.path.exists(args.out_dir):
         os.makedirs(args.out_dir)
@@ -72,48 +75,44 @@ def main(logger, args):
     seeds = args.seed.split(",")
     config_split = "unseen_domain_test" if args.unseen_domain_only else "test"
 
-    for seed in seeds:
+    # Load the test tasks to evaluate on
+    dev_data = load_data(args.task, args.split, args.k, seed=100, config_split=config_split,
+        is_null=args.is_null, max_examples_per_task=args.max_examples_per_task)
+    dev_counter = Counter()
+    for dp in dev_data:
+        dev_counter[dp["task"]] += 1
+    for k, v in dev_counter.items():
+        logger.info("[Dev] %s\t%d" % (k, v))
 
-        ### data ...
+    for task_idx, test_task in enumerate(dev_counter):
+        seed = seeds[task_idx % len(seeds)] # Arbitrarily choose one random seed (for sampling k-shot context)
+
+        # Load the corresponding k-shot context for the chosen seed
         train_data = load_data(args.task, "train", args.k, seed=seed, config_split=config_split)
-        dev_data = load_data(args.task, args.split, args.k, seed=seed, config_split=config_split, is_null=args.is_null)
 
-        train_counter = Counter()
-        dev_counter = Counter()
-        for dp in train_data:
-            train_counter[dp["task"]] += 1
-        for dp in dev_data:
-            dev_counter[dp["task"]] += 1
-        for k, v in train_counter.items():
-            logger.info("[Train] %s\t%d" % (k, v))
-        for k, v in dev_counter.items():
-            logger.info("[Dev] %s\t%d" % (k, v))
+        logger.info(f"--------------------- SEED {seed} | TEST TASK ({task_idx} / {len(dev_counter)}): {test_task}")
+        curr_dev_data = [dp for dp in dev_data if dp["task"]==test_task]
+        curr_train_data = [dp for dp in train_data if dp["task"]==test_task]
+        assert len(curr_dev_data)>0
+        assert not args.use_demonstrations or len(curr_train_data)==args.k, \
+                (args.use_demonstrations, len(curr_train_data), args.k)
 
-        logger.info("%s on %s (%d train, %d dev)" % (args.method, args.task, len(train_counter), len(dev_counter)))
+        config_file = "config/tasks/{}.json".format(test_task)
+        assert os.path.exists(config_file), config_file
+        with open(config_file, "r") as f:
+            config = json.load(f)
+        is_classification = config["task_type"]=="classification"
+        if is_classification:
+            options = curr_dev_data[0]["options"]
+            assert np.all([d["options"]==options for d in curr_dev_data+curr_train_data])
 
-        for test_task in dev_counter:
-            curr_dev_data = [dp for dp in dev_data if dp["task"]==test_task]
-            curr_train_data = [dp for dp in train_data if dp["task"]==test_task]
-            assert len(curr_dev_data)>0
-            assert not args.use_demonstrations or len(curr_train_data)==args.k, \
-                    (args.use_demonstrations, len(curr_train_data), args.k)
+        result = run(args, logger, test_task, metaicl_data, metaicl_model,
+                        curr_train_data, curr_dev_data, seed, checkpoint, is_classification, add_newlines)
 
-            config_file = "config/tasks/{}.json".format(test_task)
-            assert os.path.exists(config_file), config_file
-            with open(config_file, "r") as f:
-                config = json.load(f)
-            is_classification = config["task_type"]=="classification"
-            if is_classification:
-                options = curr_dev_data[0]["options"]
-                assert np.all([d["options"]==options for d in curr_dev_data+curr_train_data])
-
-            result = run(logger, test_task, metaicl_data, metaicl_model,
-                         curr_train_data, curr_dev_data, seed, checkpoint, is_classification, add_newlines)
-
-            if result is None:
-                errors.append("%s/%s" % (test_task, seed))
-            else:
-                results.append(result)
+        if result is None:
+            errors.append("%s/%s" % (test_task, seed))
+        else:
+            results.append(result)
 
     if args.is_null:
         return
@@ -123,9 +122,10 @@ def main(logger, args):
     if len(errors)>0:
         logger.info("You had errors with datasets:", ",".join(errors))
         logger.info("Please see the error messages")
+    return np.mean(results)
 
 
-def run(logger, task, metaicl_data, metaicl_model, train_data, dev_data, seed,
+def run(args, logger, task, metaicl_data, metaicl_model, train_data, dev_data, seed,
         checkpoint, is_classification, add_newlines):
 
     if args.do_zeroshot:
@@ -151,21 +151,22 @@ def run(logger, task, metaicl_data, metaicl_model, train_data, dev_data, seed,
                       ))
 
     metaicl_data.tensorize(train_data, dev_data, add_newlines=add_newlines)
-    metaicl_data.print_tensorized_example()
+    # metaicl_data.print_tensorized_example()
     logger.info(cache_path)
 
-    if os.path.exists(cache_path):
-        with open(cache_path, "rb") as f:
-            losses = pkl.load(f)
-    else:
-        if metaicl_model.is_none():
-            metaicl_model.load(checkpoint)
-            metaicl_model.cuda()
-            metaicl_model.eval()
+    # Disable caching: very error-prone if you run new experiments while forgetting to delete the cache
+    # if os.path.exists(cache_path):
+    #     with open(cache_path, "rb") as f:
+    #         losses = pkl.load(f)
+    # else:
+    if metaicl_model.is_none():
+        metaicl_model.load(checkpoint)
+        metaicl_model.cuda()
+        metaicl_model.eval()
 
-        losses = metaicl_model.do_inference(metaicl_data, args.test_batch_size)
-        with open(cache_path, "wb") as f:
-            pkl.dump(losses, f)
+    losses = metaicl_model.do_inference(metaicl_data, args.test_batch_size)
+    with open(cache_path, "wb") as f:
+        pkl.dump(losses, f)
 
     assert len(losses)==len(metaicl_data)
 
@@ -204,6 +205,7 @@ if __name__=='__main__':
     parser.add_argument("--k", type=int, default=16)
     parser.add_argument("--seed", type=str, default="100")
 
+    parser.add_argument("--max_examples_per_task", type=int, default=None)
     parser.add_argument("--test_batch_size", type=int, default=64)
     parser.add_argument("--global_step", type=str, default=None)
     parser.add_argument("--checkpoint", type=str, default=None)
