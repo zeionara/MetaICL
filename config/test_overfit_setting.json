@@ -1,0 +1,4 @@
+{
+    "train": ["amazon_polarity"],
+    "test": ["amazon_polarity"]
+}
