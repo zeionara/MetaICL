@@ -23,9 +23,12 @@ def load_data(task, split, k, seed=0, config_split=None, datasets=None,
 
     data = []
     for dataset in datasets:
-        data_path = os.path.join("data", dataset,
-                                 "{}_{}_{}_{}.jsonl".format(dataset, k, seed if split=="train" else 100,
-                                                          "test" if split is None else split))
+        if dataset.endswith('.jsonl'):
+            data_path = dataset
+        else:
+            data_path = os.path.join("data", dataset,
+                                    "{}_{}_{}_{}.jsonl".format(dataset, k, seed if split=="train" else 100,
+                                                            "test" if split is None else split))
         with open(data_path, "r") as f:
             for idx, line in enumerate(f):
                 if max_examples_per_task is not None:

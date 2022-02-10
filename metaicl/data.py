@@ -20,6 +20,7 @@ from multiprocessing import Pool
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 
 import wandb
+from tqdm import tqdm
 
 class MetaICLData(object):
 
@@ -216,71 +217,76 @@ class MetaICLData(object):
                 raise NotImplementedError()
 
     def _tensorize_for_training(self, train_data):
-        for dp in train_data:
-            assert type(dp)==dict, ("Each example should be a dictionary", dp)
-            assert "input" in dp and "output" in dp, ("Training example should contain input and output", dp)
-
-        # each datapoint: passage, question, options, output
-        bos_token_id = self.tokenizer.bos_token_id
-        eos_token_id = self.tokenizer.eos_token_id
-
-        input_ids, attention_mask, token_type_ids = [], [], []
-        n_answers = []
-
-        if self.use_demonstrations:
-            first_tokenized = []
-            nonfirst_tokenized = []
-
+        try:
             for dp in train_data:
-                first_tokenized.append(self._prepro_each_datapoint(
-                    dp, is_first=True, is_training=True))
-                nonfirst_tokenized.append(self._prepro_each_datapoint(
-                    dp, is_first=False, is_training=True))
+                assert type(dp)==dict, ("Each example should be a dictionary", dp)
+                assert "input" in dp and "output" in dp, ("Training example should contain input and output", dp)
 
-            N=1
+            # each datapoint: passage, question, options, output
+            bos_token_id = self.tokenizer.bos_token_id
+            eos_token_id = self.tokenizer.eos_token_id
 
-            def _draw_random(tot, n, exclude_indices):
-                r = np.random.choice([i for i in range(tot) if i not in exclude_indices])
-                if n==1:
-                    return [r]
-                return [r] + _draw_random(tot, n-1, exclude_indices | set([r]))
+            input_ids, attention_mask, token_type_ids = [], [], []
+            n_answers = []
 
-            for dp_idx, dp in enumerate(train_data):
-                for _ in range(N):
-                    demon_indices = _draw_random(len(train_data), self.k, set([dp_idx]))
-                    inputs = []
-                    for demon_idx, index in enumerate(demon_indices):
-                        if demon_idx==0:
-                            inputs += first_tokenized[index][0] + first_tokenized[index][1]
-                        else:
-                            inputs += nonfirst_tokenized[index][0] + nonfirst_tokenized[index][1]
-                        assert index!=dp_idx
-                    inputs += nonfirst_tokenized[dp_idx][0]
-                    outputs = nonfirst_tokenized[dp_idx][1]
+            if self.use_demonstrations:
+                first_tokenized = []
+                nonfirst_tokenized = []
+
+                for dp in train_data:
+                    first_tokenized.append(self._prepro_each_datapoint(
+                        dp, is_first=True, is_training=True))
+                    nonfirst_tokenized.append(self._prepro_each_datapoint(
+                        dp, is_first=False, is_training=True))
+
+                N=1
+
+                def _draw_random(tot, n, exclude_indices):
+                    r = np.random.choice([i for i in range(tot) if i not in exclude_indices])
+                    if n==1:
+                        return [r]
+                    return [r] + _draw_random(tot, n-1, exclude_indices | set([r]))
+
+                for dp_idx, dp in enumerate(train_data):
+                    for _ in range(N):
+                        demon_indices = _draw_random(len(train_data), self.k, set([dp_idx]))
+                        inputs = []
+                        for demon_idx, index in enumerate(demon_indices):
+                            if demon_idx==0:
+                                inputs += first_tokenized[index][0] + first_tokenized[index][1]
+                            else:
+                                inputs += nonfirst_tokenized[index][0] + nonfirst_tokenized[index][1]
+                            assert index!=dp_idx
+                        inputs += nonfirst_tokenized[dp_idx][0]
+                        outputs = nonfirst_tokenized[dp_idx][1]
+
+                        encoded = prepro_sentence_pair_single(
+                            inputs, outputs, self.max_length, bos_token_id, eos_token_id,
+                            allow_truncation=True)
+
+                        input_ids.append(encoded[0])
+                        attention_mask.append(encoded[1])
+                        token_type_ids.append(encoded[2])
+
+            else:
+                for dp in train_data:
+                    inputs, outputs = self._prepro_each_datapoint(
+                        dp, is_first=True, is_training=True)
 
                     encoded = prepro_sentence_pair_single(
-                        inputs, outputs, self.max_length, bos_token_id, eos_token_id,
-                        allow_truncation=True)
+                        inputs, outputs, self.max_length, bos_token_id, eos_token_id)
 
                     input_ids.append(encoded[0])
                     attention_mask.append(encoded[1])
                     token_type_ids.append(encoded[2])
 
-        else:
-            for dp in train_data:
-                inputs, outputs = self._prepro_each_datapoint(
-                    dp, is_first=True, is_training=True)
+            return dict(input_ids=torch.LongTensor(input_ids),
+                        attention_mask=torch.LongTensor(attention_mask),
+                        token_type_ids=torch.LongTensor(token_type_ids))
+        except AssertionError as e:
+            self.logger.info(("Assertion failed! Skipping", dp.get("task", None), e))
+            return None
 
-                encoded = prepro_sentence_pair_single(
-                    inputs, outputs, self.max_length, bos_token_id, eos_token_id)
-
-                input_ids.append(encoded[0])
-                attention_mask.append(encoded[1])
-                token_type_ids.append(encoded[2])
-
-        return dict(input_ids=torch.LongTensor(input_ids),
-                    attention_mask=torch.LongTensor(attention_mask),
-                    token_type_ids=torch.LongTensor(token_type_ids))
 
     def tensorize(self, _train_data, _test_data, options=None,
                   add_newlines=True):
@@ -395,9 +401,10 @@ class MetaICLData(object):
 
         unique_task_names = set([dp["task"] for dp in train_data])
         sharded_inputs = []
+        self.logger.info("sharding inputs...")
         if self.use_demonstrations or (len(unique_task_names)>200 and len(train_data)>=1638400):
             tot = 0
-            for i, curr_train_task in enumerate(unique_task_names):
+            for i, curr_train_task in enumerate(tqdm(unique_task_names)):
                 curr_train_data = [dp for dp in train_data if dp["task"]==curr_train_task]
                 tot += len(curr_train_data)
                 if self.use_demonstrations and len(unique_task_names)>200 and len(train_data)>=1638400:
@@ -418,16 +425,20 @@ class MetaICLData(object):
                 sharded_inputs.append(train_data[i*n_per_shard:(i+1)*n_per_shard])
 
         inputs = {"input_ids": [], "attention_mask": [], "token_type_ids": []}
+        self.logger.info(f"len(sharded_inputs) {len(sharded_inputs)}")
+        self.logger.info(f"running on {self.n_process} process(es)")
         if self.n_process==1:
-            for in_ in sharded_inputs:
+            for in_ in tqdm(sharded_inputs):
                 out = self._tensorize_for_training(in_)
-                for key in ["input_ids", "attention_mask", "token_type_ids"]:
-                    inputs[key] += out[key].numpy().tolist()
+                if out is not None:
+                    for key in ["input_ids", "attention_mask", "token_type_ids"]:
+                        inputs[key] += out[key].numpy().tolist()
         else:
             with Pool(self.n_process) as p:
                 for out in p.imap_unordered(self._tensorize_for_training, sharded_inputs):
-                    for key in ["input_ids", "attention_mask", "token_type_ids"]:
-                        inputs[key] += out[key].numpy().tolist()
+                    if out is not None:
+                        for key in ["input_ids", "attention_mask", "token_type_ids"]:
+                            inputs[key] += out[key].numpy().tolist()
 
         N = len(inputs["input_ids"])
         indices = np.random.permutation(range(N))
@@ -478,7 +489,7 @@ def prepro_sentence_pair_single(ids1, ids2, max_length,
     #    ids2 = ids2 + [eos_token_id]
     if allow_truncation and len(ids1)+len(ids2) > max_length:
         ids1 = ids1[len(ids1)+len(ids2)-max_length:] # len = max_length-len(ids2)
-        assert len(ids1)+len(ids2)==max_length
+        assert len(ids1)+len(ids2)==max_length, (len(ids1), len(ids2), max_length)
 
     n_mask = max_length-len(ids1)-len(ids2)
     assert n_mask>=0, (max_length, len(ids1), len(ids2))

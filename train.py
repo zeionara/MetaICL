@@ -49,7 +49,7 @@ def main(logger, args):
     if args.init_checkpoint is not None:
         assert os.path.exists(args.init_checkpoint)
 
-    ######### load tensorize data
+    ######### tensorize data
     metaicl_data = MetaICLData(logger, tokenizer, args.method, args.use_demonstrations,
                                args.test_k, max_length, args.max_length_per_example,
                                do_tensorize=args.do_tensorize,
