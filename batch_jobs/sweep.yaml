@@ -5,11 +5,13 @@ metric:
   goal: minimize
 parameters:
   task:
-    values: ['hr_to_lr']
+    values: ['dataset_005']
   gradient_accumulation_steps:
-    values: [1, 8]
+    values: [1, 8, 32]
   lr:
-    values: [1e-6, 1e-5, 1e-4]
+    values: [1e-6, 5e-6, 1e-5]
+  label_smoothing:
+    values: [0.0]
 command:
   - python
   - ${program}
