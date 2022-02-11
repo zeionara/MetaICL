@@ -116,7 +116,8 @@ def main(logger, args):
         args.log_period,
         gradient_accumulation_steps = args.gradient_accumulation_steps,
         max_grad_norm = args.max_grad_norm, 
-        val_split = args.validation_split)
+        val_split = args.validation_split,
+        label_smoothing = args.label_smoothing)
 
 if __name__=='__main__':
 
@@ -148,6 +149,7 @@ if __name__=='__main__':
     parser.add_argument("--batch_size", type=int, default=1)
     parser.add_argument("--gradient_accumulation_steps", type=int, default=1)
     parser.add_argument("--max_grad_norm", type=float, default=1.0)
+    parser.add_argument("--label_smoothing", type=float, default=0.0)
 
     parser.add_argument("--init_checkpoint", type=str, default=None)
     parser.add_argument("--weight_decay", type=float, default=0.0)

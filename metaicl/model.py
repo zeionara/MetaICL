@@ -244,7 +244,7 @@ class MetaICLModel(object):
         return val_loss
 
     def do_train(self, data, batch_size, num_training_steps, save_period, log_period,
-                 gradient_accumulation_steps=1, max_grad_norm=1.0, val_split=None):
+                 gradient_accumulation_steps=1, max_grad_norm=1.0, val_split=None, label_smoothing=0.0):
         if val_split is not None:
             dataloader, val_loader = data.get_dataloader(batch_size, is_training=True, val_split=val_split)
             self.logger.info(f"len(dataloader) {len(dataloader)}")
@@ -306,7 +306,7 @@ class MetaICLModel(object):
                     labels=None
                 else:
                     labels=batch[3].to(self.device)
-                loss = self.run_model(input_ids, attention_mask, token_type_ids, labels=labels)
+                loss = self.run_model(input_ids, attention_mask, token_type_ids, labels=labels, label_smoothing=label_smoothing)
                 loss = loss.mean()
                 if torch.isnan(loss).data:
                     print ("Stop training because loss=%s" % (loss.data))
@@ -388,7 +388,7 @@ class MetaICLModel(object):
             predictions.append(prediction.strip())
         return predictions
 
-    def run_model(self, input_ids, attention_mask, token_type_ids, labels=None):
+    def run_model(self, input_ids, attention_mask, token_type_ids, labels=None, label_smoothing=0.0):
         outputs = self.model(input_ids=input_ids, attention_mask=attention_mask)
         logits = outputs.logits[..., :-1, :].contiguous()
 
@@ -397,7 +397,7 @@ class MetaICLModel(object):
         labels = labels[..., 1:].contiguous()
         label_mask = token_type_ids[..., 1:].contiguous()
 
-        loss_fct = torch.nn.CrossEntropyLoss(reduction="none")
+        loss_fct = torch.nn.CrossEntropyLoss(reduction="none", label_smoothing=label_smoothing)
         losses = loss_fct(logits.view(-1, logits.size(-1)), labels.view(-1)) # [batch_size, length]
 
         losses = losses.view(logits.size(0), logits.size(1)) * label_mask
