@@ -284,7 +284,7 @@ class MetaICLModel(object):
                         self.logger.info(val_loss)
                         if val_loss < best_val_loss:
                             best_val_loss = val_loss
-                            self.save(f"best_val_loss")
+                            # self.save(f"best_val_loss")
                             wandb.run.summary["best_val_loss"] = best_val_loss
                             wandb.run.summary["best_val_loss_global_step"] = global_step
                     
@@ -294,7 +294,7 @@ class MetaICLModel(object):
                     self.logger.info(dev_score)
                     if dev_score > best_dev_score:
                         best_dev_score = dev_score
-                        self.save(f"best_dev_score")
+                        # self.save(f"best_dev_score")
                         wandb.run.summary["best_dev_score"] = best_dev_score
                         wandb.run.summary["best_dev_score_global_step"] = global_step
 
@@ -326,8 +326,8 @@ class MetaICLModel(object):
                         "val/loss": val_loss,
                         "dev/score": dev_score,
                     })
-                if global_step % save_period == 0:
-                    self.save(global_step)
+                # if global_step % save_period == 0:
+                #     self.save(global_step)
 
                 # Backprop
                 if self.fp16:

@@ -132,7 +132,7 @@ if __name__=='__main__':
     parser.add_argument("--use_demonstrations", default=True, action="store_true")
     parser.add_argument("--log_file", default=None, type=str)
 
-    parser.add_argument("--num_training_steps", type=int, default=30000)
+    parser.add_argument("--num_training_steps", type=int, default=100000)
     parser.add_argument("--validation_split", type=float, default=0.001)
     parser.add_argument("--save_period", type=int, default=10000)
     parser.add_argument("--log_period", type=int, default=500)
