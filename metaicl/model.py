@@ -219,8 +219,8 @@ class MetaICLModel(object):
             'test_args': vars(args) # vars() converts the argparse.Namespace to Dict
         })
 
-        macro_f1 = test.main(self.logger, args, self)
-        return macro_f1
+        results_dict = test.main(self.logger, args, self)
+        return results_dict
 
     def evaluate_validation_loss(self, val_loader):
         self.model.eval()
@@ -290,7 +290,8 @@ class MetaICLModel(object):
                     
                     # Dev score
                     self.logger.info("computing dev score")
-                    dev_score = self.evaluate_dev_score()
+                    dev_results_dict = self.evaluate_dev_score()
+                    dev_score = dev_results_dict['mean']
                     self.logger.info(dev_score)
                     if dev_score > best_dev_score:
                         best_dev_score = dev_score
@@ -324,6 +325,7 @@ class MetaICLModel(object):
                         "epoch": epoch,
                         "train/loss": train_loss,
                         "val/loss": val_loss,
+                        "dev": dev_results_dict,
                         "dev/score": dev_score,
                     })
                 # if global_step % save_period == 0:

@@ -84,6 +84,7 @@ def main(logger, args, metaicl_model=None):
     for k, v in dev_counter.items():
         logger.info("[Dev] %s\t%d" % (k, v))
 
+    results_dict = {}
     for task_idx, test_task in enumerate(dev_counter):
         seed = seeds[task_idx % len(seeds)] # Arbitrarily choose one random seed (for sampling k-shot context)
 
@@ -112,17 +113,19 @@ def main(logger, args, metaicl_model=None):
         if result is None:
             errors.append("%s/%s" % (test_task, seed))
         else:
+            results_dict[test_task] = result
             results.append(result)
 
     if args.is_null:
         return
 
     logger.info("Macro-F1 of %s over %d target tasks: %.1f" % (args.task, len(results) // len(seeds), 100*np.mean(results)))
+    results_dict['mean'] = np.mean(results)
 
     if len(errors)>0:
         logger.info("You had errors with datasets:", ",".join(errors))
         logger.info("Please see the error messages")
-    return np.mean(results)
+    return results_dict
 
 
 def run(args, logger, task, metaicl_data, metaicl_model, train_data, dev_data, seed,
