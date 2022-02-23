@@ -217,6 +217,7 @@ class MetaICLData(object):
                 raise NotImplementedError()
 
     def _tensorize_for_training(self, train_data):
+        # Train data is a flat list of [json_obj, json_obj, json_obj, ...] where each json_obj is an example from relevant train.jsonl files
         try:
             for dp in train_data:
                 assert type(dp)==dict, ("Each example should be a dictionary", dp)
@@ -229,11 +230,18 @@ class MetaICLData(object):
             input_ids, attention_mask, token_type_ids = [], [], []
             n_answers = []
 
+            # few-shot learning
             if self.use_demonstrations:
+
+                # Apply tokenization to all datapoints, so we can conveniently grab the ones we need later
                 first_tokenized = []
                 nonfirst_tokenized = []
-
+                # first/nonfirst simply differs based on padding nonfirst with \n\n\n
+                # so that text isn't joined up on concatenating
                 for dp in train_data:
+                    # _prepro_each_datapoint returns
+                    # (Direct) [input_tokens, output_tokens]
+                    # (Channel) [output_tokens, input_tokens]
                     first_tokenized.append(self._prepro_each_datapoint(
                         dp, is_first=True, is_training=True))
                     nonfirst_tokenized.append(self._prepro_each_datapoint(
@@ -242,13 +250,21 @@ class MetaICLData(object):
                 N=1
 
                 def _draw_random(tot, n, exclude_indices):
+                    """
+                    This is equivalent to 
+
+                    candidate_idxs = list(range(num_examples)).remove(exclude_idx)
+                    return np.random.choice(candidate_idxs, size=n, replace=False)
+                    """
                     r = np.random.choice([i for i in range(tot) if i not in exclude_indices])
                     if n==1:
                         return [r]
                     return [r] + _draw_random(tot, n-1, exclude_indices | set([r]))
 
+                # We create a few-shot prompt for every single dp in the train data
                 for dp_idx, dp in enumerate(train_data):
                     for _ in range(N):
+                        # Draw k examples (demos) from the train data, without replacement, excluding the query example (dp_idx)
                         demon_indices = _draw_random(len(train_data), self.k, set([dp_idx]))
                         inputs = []
                         for demon_idx, index in enumerate(demon_indices):
@@ -257,9 +273,15 @@ class MetaICLData(object):
                             else:
                                 inputs += nonfirst_tokenized[index][0] + nonfirst_tokenized[index][1]
                             assert index!=dp_idx
+                        # nonfirst_tokenized is a list of [input, output] tuples
                         inputs += nonfirst_tokenized[dp_idx][0]
                         outputs = nonfirst_tokenized[dp_idx][1]
 
+                        # Go from tokenized lists of inputs and outputs
+                        # input_ids, attention_mask, token_type_ids = encoded
+                        # input_ids: [*input_token_ids, *output_token_ids, padding] with len(input_ids) == max_length
+                        # attention_mask: [1*len(input_token_ids), 0*len(output_token_ids), padding] with len(attention_mask) == max_length
+                        # token_type_ids: [0*len(input_token_ids), 1*len(output_token_ids), padding] with len(token_type_ids) == max_length
                         encoded = prepro_sentence_pair_single(
                             inputs, outputs, self.max_length, bos_token_id, eos_token_id,
                             allow_truncation=True)
@@ -268,6 +290,7 @@ class MetaICLData(object):
                         attention_mask.append(encoded[1])
                         token_type_ids.append(encoded[2])
 
+            # zero-shot learning
             else:
                 for dp in train_data:
                     inputs, outputs = self._prepro_each_datapoint(
@@ -460,44 +483,70 @@ class MetaICLData(object):
         assert self.tensorized_inputs is not None
 
         idx = 0
-        text = "Checking the first example..."
-        input_ids = self.tensorized_inputs["input_ids"][idx]
-        token_type_ids = self.tensorized_inputs["token_type_ids"][idx]
-        if type(input_ids)!=list:
-            input_ids = input_ids.numpy().tolist()
-        if type(token_type_ids)!=list:
-            token_type_ids = token_type_ids.numpy().tolist()
+        for idx in range(20):
+            text = f"\n\n\n\n\n\n{idx}-TH EXAMPLE ------------------------------------------"
+            # text = "Checking the first example..."
+            input_ids = self.tensorized_inputs["input_ids"][idx]
+            token_type_ids = self.tensorized_inputs["token_type_ids"][idx]
+            text += f'\ninput_ids: ({len(input_ids)}) {input_ids}'
+            text += f'\ntoken_type_ids: ({len(token_type_ids)}) {token_type_ids}'
+            if type(input_ids)!=list:
+                input_ids = input_ids.numpy().tolist()
+            if type(token_type_ids)!=list:
+                token_type_ids = token_type_ids.numpy().tolist()
 
-        text += "\nInput:\n"
-        text += self.tokenizer.decode(input_ids[:token_type_ids.index(1)])
-        text += "\nOutput:\n"
-        text += self.tokenizer.decode([_id for _id, _type_id in zip(input_ids, token_type_ids) if _type_id==1])
+            # Input is all elements up to the first occurence of '1' in token_type_ids
+            input_ids_in = input_ids[:token_type_ids.index(1)]
+            text += f'\n\ncontext_input_ids: ({len(input_ids_in)}) {input_ids_in}'
+            # Output is all elements corresponding to '1' in token_type_ids
+            input_ids_out = [_id for _id, _type_id in zip(input_ids, token_type_ids) if _type_id==1]
+            text += f'\nanswer_input_ids: ({len(input_ids_out)}) {input_ids_out}'
+            text += f'\nTotal ids excluding padding: {len(input_ids_in) + len(input_ids_out)} (if ==1024, truncation probably occurred)\n'
 
-        if return_string:
-            return text
 
-        if self.local_rank<=0:
-            self.logger.info(text)
+            text += "\n\nCONTEXT:\n"
+            text += self.tokenizer.decode(input_ids_in)
+            text += "\n\nANSWER:\n"
+            text += self.tokenizer.decode(input_ids_out)
+
+            if return_string:
+                return text
+
+            if self.local_rank<=0:
+                self.logger.info(text)
 
 def prepro_sentence_pair_single(ids1, ids2, max_length,
                                 bos_token_id, eos_token_id,
                                 allow_truncation=False):
+    """
+    ids1: Tokenized input_ids for the input
+    ids2: Tokenized input_ids for the output
+    """
 
     #if bos_token_id is not None:
     #    ids1 = [bos_token_id] + ids1
     #if eos_token_id is not None:
     #    ids2 = ids2 + [eos_token_id]
     if allow_truncation and len(ids1)+len(ids2) > max_length:
+        # print("TRUNCATING inside prepro_sentence_pair_single", len(ids1) + len(ids2), max_length)
         ids1 = ids1[len(ids1)+len(ids2)-max_length:] # len = max_length-len(ids2)
         assert len(ids1)+len(ids2)==max_length, (len(ids1), len(ids2), max_length)
 
-    n_mask = max_length-len(ids1)-len(ids2)
+    n_mask = max_length-len(ids1)-len(ids2) # Pad with zeros to the full max_length
     assert n_mask>=0, (max_length, len(ids1), len(ids2))
     input_ids = ids1+ids2+[0 for _ in range(n_mask)]
     attention_mask = [1 for _ in ids1+ids2] + [0 for _ in range(n_mask)]
     token_type_ids = [0 for _ in ids1] + [1 for _ in ids2] + [0 for _ in range(n_mask)]
+    """
+    Returns:
+
+    input_ids      = [IN0, IN1, ..., OUT0, OUT1, ..., 0, 0, 0]
+    attention_mask = [1  , 1  , ..., 0   , 0   , ..., 0, 0, 0]
+    token_type_ids = [0  , 0  , ..., 1   , 1   , ..., 0, 0, 0] # Indicates which tokens belong to (x, y)
+    """
     return input_ids, attention_mask, token_type_ids
 
+# THIS FUNCTION IS NEVER USED
 def prepro_sentence_pair(train_inputs, test_inputs, max_length,
                          bos_token_id, eos_token_id,
                          allow_truncation=False):

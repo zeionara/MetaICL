@@ -37,6 +37,7 @@ def main(logger, args):
         args.batch_size, max_length, args.max_length_per_example))
 
     train_data = load_data(args.task, "train", args.k, seed=args.seed)
+    # Train data is a flat list of [json_obj, json_obj, json_obj, ...] where each json_obj is an example from relevant train.jsonl files
 
     train_counter = Counter()
     for dp in train_data:
@@ -94,7 +95,7 @@ def main(logger, args):
 
     if args.no_masking:
         metaicl_data.tensorized_inputs["token_type_ids"] = torch.ones_like(metaicl_data.tensorized_inputs["input_ids"])
-    # metaicl_data.print_tensorized_example()
+    metaicl_data.print_tensorized_example()
 
     logger.info(args.out_dir)
 
@@ -132,7 +133,7 @@ if __name__=='__main__':
     parser.add_argument("--use_demonstrations", default=True, action="store_true")
     parser.add_argument("--log_file", default=None, type=str)
 
-    parser.add_argument("--num_training_steps", type=int, default=100000)
+    parser.add_argument("--num_training_steps", type=int, default=1000000)
     parser.add_argument("--validation_split", type=float, default=0.001)
     parser.add_argument("--save_period", type=int, default=10000)
     parser.add_argument("--log_period", type=int, default=500)

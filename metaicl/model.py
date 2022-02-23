@@ -361,8 +361,6 @@ class MetaICLModel(object):
         if verbose:
             dataloader = tqdm(dataloader)
         losses = []
-        print("batch_size", batch_size)
-        print("Number of inference batches", len(dataloader))
         # num_batches = ceil(num_examples * num_class_options / batch_size)
         for idx, batch in enumerate(dataloader):
             input_ids=batch[0].cuda()
