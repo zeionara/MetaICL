@@ -102,6 +102,22 @@ def main(logger, args):
     if not os.path.exists(args.out_dir):
         os.makedirs(args.out_dir)
 
+    if args.debug_data_order:
+        dataloader, val_loader = metaicl_data.get_dataloader(args.batch_size, is_training=True, val_split=args.validation_split)
+        for idx, batch in enumerate(dataloader):
+            # Run model through train batch
+            input_ids=batch[0]
+            attention_mask=batch[1]
+            token_type_ids=batch[2]
+
+            txt = metaicl_data.print_tokenized_example(input_ids[0], token_type_ids[0])
+            for line in txt.split("\n"):
+                if line.startswith("TASK||"):
+                    task_name = line[6:]
+                    print("BATCH", idx, task_name)
+                    break
+        return
+
     metaicl_model = MetaICLModel(logger, args.out_dir, args.fp16, args.local_rank, model_id=slurm_job_id, task=args.task)
     metaicl_model.load(args.init_checkpoint, args.gpt2)
     metaicl_model.to_device()
@@ -132,6 +148,7 @@ if __name__=='__main__':
 
     parser.add_argument("--use_demonstrations", default=True, action="store_true")
     parser.add_argument("--log_file", default=None, type=str)
+    parser.add_argument("--debug_data_order", default=False, action="store_true")
 
     parser.add_argument("--num_training_steps", type=int, default=1000000)
     parser.add_argument("--validation_split", type=float, default=0.001)

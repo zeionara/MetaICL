@@ -135,6 +135,7 @@ class MetaICLData(object):
     def _prepro_each_datapoint(self, dp, is_first=True, is_training=False, for_demonstrations=False,
                                add_newlines=True):
         dp = dp.copy()
+        # dp['input'] = f"TASK||{dp['task']}\n" + dp['input']
         if add_newlines:
             if self.method=="direct":
                 if not is_first:
@@ -376,7 +377,7 @@ class MetaICLData(object):
                                       token_type_ids=torch.LongTensor(token_type_ids))
         self.metadata = metadata
 
-    def tensorize_for_training(self, train_data, keyword, seed):
+    def tensorize_for_training(self, train_data, keyword, seed, debug_order=False):
         assert self.tensorize_dir is not None
 
         if not os.path.exists(self.tensorize_dir):
@@ -478,6 +479,39 @@ class MetaICLData(object):
             self.logger.info("Preprocessing done for i=%d" % i)
 
         self.logger.info("Finish saving preprocessed data ...")
+
+    def print_tokenized_example(self, input_ids, token_type_ids):
+        # print(f"\n\n\n\n\n\n EXAMPLE ------------------------------------------")
+        # text = "Checking the first example..."
+        # input_ids = self.tensorized_inputs["input_ids"][idx]
+        # token_type_ids = self.tensorized_inputs["token_type_ids"][idx]
+        # print(f'\ninput_ids: ({len(input_ids)}) {input_ids}')
+        # print(f'\ntoken_type_ids: ({len(token_type_ids)}) {token_type_ids}')
+        if type(input_ids)!=list:
+            input_ids = input_ids.numpy().tolist()
+        if type(token_type_ids)!=list:
+            token_type_ids = token_type_ids.numpy().tolist()
+
+        # Input is all elements up to the first occurence of '1' in token_type_ids
+        input_ids_in = input_ids[:token_type_ids.index(1)]
+        # print(f'\n\ncontext_input_ids: ({len(input_ids_in)}) {input_ids_in}')
+        # Output is all elements corresponding to '1' in token_type_ids
+        input_ids_out = [_id for _id, _type_id in zip(input_ids, token_type_ids) if _type_id==1]
+        # print(f'\nanswer_input_ids: ({len(input_ids_out)}) {input_ids_out}')
+        # print(f'\nTotal ids excluding padding: {len(input_ids_in) + len(input_ids_out)} (if ==1024, truncation probably occurred)\n')
+
+
+        # print("\n\nCONTEXT:\n")
+        context_text = self.tokenizer.decode(input_ids_in)
+        # print(context_text)
+        # print("\n\nANSWER:\n")
+        answer_text = self.tokenizer.decode(input_ids_out)
+        # print(answer_text)
+
+        # if self.local_rank<=0:
+        #     self.logger.info(text)
+        text = context_text + answer_text
+        return text
 
     def print_tensorized_example(self, return_string=False):
         assert self.tensorized_inputs is not None
