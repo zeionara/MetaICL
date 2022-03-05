@@ -20,7 +20,7 @@ from utils.utils import get_checkpoint_id, download_file
 
 class MetaICLModel(object):
 
-    def __init__(self, logger=None, out_dir=None, fp16=True, local_rank=-1, model_id="", task=None):
+    def __init__(self, logger=None, out_dir=None, fp16=True, local_rank=-1, model_id="", task=None, debug_data_order=False):
         if logger is None:
             class Logger():
                 def info(self, text):
@@ -33,6 +33,7 @@ class MetaICLModel(object):
         self.local_rank = local_rank
         self.model_id = model_id
         self.task = task
+        self.debug_data_order = debug_data_order
 
         if self.local_rank == -1:
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -273,7 +274,7 @@ class MetaICLModel(object):
         epoch = 0
         while True: 
             self.logger.info(f"Epoch {epoch}")
-            for batch in dataloader:
+            for batch_idx, batch in enumerate(dataloader):
 
                 # Evaluate before we train on the batch
                 if global_step % log_period == 0:
@@ -303,6 +304,9 @@ class MetaICLModel(object):
                 input_ids=batch[0].to(self.device)
                 attention_mask=batch[1].to(self.device)
                 token_type_ids=batch[2].to(self.device)
+                if self.debug_data_order:
+                    data.print_batch(batch, batch_idx)
+
                 if len(batch)==3:
                     labels=None
                 else:

@@ -36,7 +36,10 @@ def main(logger, args):
     logger.info("batch_size=%d\tmax_length=%d\tmax_length_per_example=%d" % (
         args.batch_size, max_length, args.max_length_per_example))
 
-    train_data = load_data(args.task, "train", args.k, seed=args.seed)
+    train_data = load_data(args.task, "train", args.k, seed=args.seed,
+        max_examples_per_task=args.max_examples_per_task,
+        shuffle_examples_seed=args.shuffle_examples_seed,
+        )
     # Train data is a flat list of [json_obj, json_obj, json_obj, ...] where each json_obj is an example from relevant train.jsonl files
 
     train_counter = Counter()
@@ -55,7 +58,8 @@ def main(logger, args):
                                args.test_k, max_length, args.max_length_per_example,
                                do_tensorize=args.do_tensorize,
                                tensorize_dir=args.tensorize_dir,
-                               n_process=args.n_process, n_gpu=args.n_gpu, local_rank=args.local_rank)
+                               n_process=args.n_process, n_gpu=args.n_gpu, local_rank=args.local_rank,
+                               debug_data_order=args.debug_data_order)
     metaicl_data.tensorize_for_training(train_data, keyword=args.task, seed=args.seed)
 
     # TODO: This is terrible; either unify the functions or split them into entirely separate things!
@@ -64,7 +68,8 @@ def main(logger, args):
                                args.test_k, max_length, args.max_length_per_example,
                                do_tensorize=False,
                                tensorize_dir=args.tensorize_dir,
-                               n_process=args.n_process, n_gpu=args.n_gpu, local_rank=args.local_rank)
+                               n_process=args.n_process, n_gpu=args.n_gpu, local_rank=args.local_rank,
+                               debug_data_order=args.debug_data_order)
     metaicl_data.tensorize_for_training(train_data, keyword=args.task, seed=args.seed)
 
     ######## actual training part
@@ -79,6 +84,7 @@ def main(logger, args):
     # Setup wandb logging
     wandb.init(
         project="metaicl",
+        tags=args.wandb_tags.split(',') if args.wandb_tags else None,
         # mode='disabled',
     )
     wandb.run.name = f"{args.task}-{slurm_job_id}"
@@ -102,23 +108,9 @@ def main(logger, args):
     if not os.path.exists(args.out_dir):
         os.makedirs(args.out_dir)
 
-    if args.debug_data_order:
-        dataloader, val_loader = metaicl_data.get_dataloader(args.batch_size, is_training=True, val_split=args.validation_split)
-        for idx, batch in enumerate(dataloader):
-            # Run model through train batch
-            input_ids=batch[0]
-            attention_mask=batch[1]
-            token_type_ids=batch[2]
-
-            txt = metaicl_data.print_tokenized_example(input_ids[0], token_type_ids[0])
-            for line in txt.split("\n"):
-                if line.startswith("TASK||"):
-                    task_name = line[6:]
-                    print("BATCH", idx, task_name)
-                    break
-        return
-
-    metaicl_model = MetaICLModel(logger, args.out_dir, args.fp16, args.local_rank, model_id=slurm_job_id, task=args.task)
+    metaicl_model = MetaICLModel(
+        logger, args.out_dir, args.fp16, args.local_rank,
+        model_id=slurm_job_id, task=args.task, debug_data_order=args.debug_data_order)
     metaicl_model.load(args.init_checkpoint, args.gpt2)
     metaicl_model.to_device()
     metaicl_model.setup_optimizer(args.optimization, args.num_training_steps, args.lr,
@@ -162,6 +154,9 @@ if __name__=='__main__':
     parser.add_argument("--seed", type=int, default=100)
     parser.add_argument("--train_seed", type=int, default=1)
 
+    parser.add_argument("--max_examples_per_task", type=int, default=None)
+    parser.add_argument("--shuffle_examples_seed", type=int, default=0)
+
     parser.add_argument("--lr", type=float, default=1e-5)
     parser.add_argument("--warmup_steps", type=int, default=0)
     parser.add_argument("--batch_size", type=int, default=1)
@@ -180,6 +175,8 @@ if __name__=='__main__':
     parser.add_argument("--optimization", type=str, default="8bit-adam")
     parser.add_argument("--fp16", default=True, action="store_true")
     parser.add_argument("--local_rank", type=int, default=-1, help="local_rank for distributed training on gpus")
+
+    parser.add_argument("--wandb_tags", type=str, default=None)
 
     args = parser.parse_args()
 

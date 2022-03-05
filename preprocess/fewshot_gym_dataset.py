@@ -130,8 +130,13 @@ class FewshotGymClassificationDataset(FewshotGymDataset):
             return None, None, None
 
         if do_train:
+            # generate_k_shot_data will be called many times for each seed, but we only
+            # want to generate meta-training data once so we only proceed if seed == 100
+            # i.e. "if seed != 100: skip this"
             if seed<100:
                 return None, None, None
+            # for the meta-training, we want to generate a long .jsonl of many (k = 16384)
+            # examples to sample from during training
             k = 16384
         elif do_test:
             k = 16
@@ -182,10 +187,8 @@ class FewshotGymTextToTextDataset(FewshotGymDataset):
 
         if self.hf_identifier not in config_dict:
             return None, None, None
-
         if use_instruct and self.hf_identifier not in prompt_names_per_task:
             return None, None, None
-
         if do_train:
             if seed<100:
                 return None, None, None

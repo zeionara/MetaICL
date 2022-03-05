@@ -12,7 +12,7 @@ import numpy as np
 import torch
 
 def load_data(task, split, k, seed=0, config_split=None, datasets=None,
-              is_null=False, max_examples_per_task=None):
+              is_null=False, max_examples_per_task=None, shuffle_examples=True, shuffle_examples_seed=0):
     if config_split is None:
         config_split = split
 
@@ -30,7 +30,11 @@ def load_data(task, split, k, seed=0, config_split=None, datasets=None,
                                     "{}_{}_{}_{}.jsonl".format(dataset, k, seed if split=="train" else 100,
                                                             "test" if split is None else split))
         with open(data_path, "r") as f:
-            for idx, line in enumerate(f):
+            lines = f.readlines()
+            if shuffle_examples:
+                np.random.seed(shuffle_examples_seed)
+                np.random.shuffle(lines)
+            for idx, line in enumerate(lines):
                 if max_examples_per_task is not None:
                     if idx >= max_examples_per_task:
                         break

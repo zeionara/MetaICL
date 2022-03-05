@@ -5,11 +5,17 @@ metric:
   goal: minimize
 parameters:
   task:
-    values: ['hr_to_lr_dev_40']
+    values: ['dataset_006_m50']
+  wandb_tags:
+    values: ['best-in-sweep,parliament']
   gradient_accumulation_steps:
-    values: [1, 8]
+    values: [8]
   lr:
     values: [1e-6, 5e-6, 1e-5]
+  max_examples_per_task:
+    values: [50]
+  shuffle_examples_seed:
+    values: [0]
   label_smoothing:
     values: [0.0]
 command:
