@@ -1,0 +1,27 @@
+{
+    "test": [
+        "piqa",
+        "hate_speech_offensive",
+        "google_wellformed_query",
+        "social_i_qa",
+        "circa",
+        "glue-sst2",
+        "scitail",
+        "emo",
+        "cosmos_qa",
+        "ag_news",
+        "art",
+        "paws",
+        "glue-qnli",
+        "quail",
+        "ade_corpus_v2-classification",
+        "sciq",
+        "hatexplain",
+        "emotion",
+        "glue-qqp",
+        "kilt_fever"
+    ],
+    "train": [
+        "data/hr_to_lr_dev_80_k50/spider_50_100_train.jsonl"
+    ]
+}
