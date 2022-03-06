@@ -5,19 +5,23 @@ metric:
   goal: minimize
 parameters:
   task:
-    values: ['dataset_006_m50']
+    values: ['hr_to_lr_dev', 'baseline_then_bm25spacyt50b', 'bm25spacyt50b_then_baseline', 'mix_baseline_bm25spacyt50b']
   wandb_tags:
-    values: ['best-in-sweep,parliament']
+    values: ['best-in-sweep,curriculum']
   gradient_accumulation_steps:
     values: [8]
   lr:
     values: [1e-6, 5e-6, 1e-5]
   max_examples_per_task:
     values: [50]
+  shuffle_on:
+    values: [0]
   shuffle_examples_seed:
     values: [0]
   label_smoothing:
     values: [0.0]
+  debug_data_order:
+    values: [1]
 command:
   - python
   - ${program}

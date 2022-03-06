@@ -26,7 +26,8 @@ class MetaICLData(object):
 
     def __init__(self, logger=None, tokenizer=None, method="channel", use_demonstrations=True, k=16,
                  max_length=1024, max_length_per_example=256,
-                 do_tensorize=False, tensorize_dir=None, n_process=None, n_gpu=None, local_rank=-1, debug_data_order=False):
+                 do_tensorize=False, tensorize_dir=None, n_process=None, n_gpu=None, local_rank=-1,
+                 debug_data_order=False, shuffle=True):
 
         self.logger = logger
         self.tokenizer = tokenizer
@@ -42,6 +43,7 @@ class MetaICLData(object):
         self.n_gpu = n_gpu
         self.local_rank = local_rank
         self.debug_data_order = debug_data_order
+        self.shuffle = shuffle
 
         self.tensorized_inputs = None
         self.metadata = None
@@ -92,7 +94,7 @@ class MetaICLData(object):
             train_size = len(dataset) - val_size
             train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
 
-            train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+            train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=self.shuffle)
             validation_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
             self.logger.info(f"len(train_loader) {len(train_loader)}")
             self.logger.info(f"len(validation_loader) {len(validation_loader)}")
@@ -263,12 +265,25 @@ class MetaICLData(object):
                     if n==1:
                         return [r]
                     return [r] + _draw_random(tot, n-1, exclude_indices | set([r]))
+                
+                def _draw_sequential(tot, n, curr_idx):
+                    # We will draw the n previous examples (up to but excluding curr_idx)
+                    idxs = list(range(tot))
+                    if curr_idx - n >= 0:
+                        return idxs[curr_idx-n:curr_idx]
+                    else:
+                        # (loop around the end of the list if exclude_indices < n)
+                        return idxs[curr_idx-n:] + idxs[:curr_idx]
 
                 # We create a few-shot prompt for every single dp in the train data
                 for dp_idx, dp in enumerate(train_data):
-                    for _ in range(N):
-                        # Draw k examples (demos) from the train data, without replacement, excluding the query example (dp_idx)
-                        demon_indices = _draw_random(len(train_data), self.k, set([dp_idx]))
+                   for _ in range(N):
+                        if self.shuffle:
+                            # Draw k examples (demos) from the train data, without replacement, excluding the query example (dp_idx)
+                            demon_indices = _draw_random(len(train_data), self.k, set([dp_idx]))
+                        else:
+                            # Draw sequentially
+                            demon_indices = _draw_sequential(len(train_data), self.k, dp_idx)
                         inputs = []
                         for demon_idx, index in enumerate(demon_indices):
                             if demon_idx==0:
@@ -421,14 +436,22 @@ class MetaICLData(object):
             return
 
         assert self.local_rank==-1
-        if any([os.path.exists(_path) for _path in all_tensorize_paths]):
-            self.logger.info("tensorize file already exists...")
-            return
+        # if any([os.path.exists(_path) for _path in all_tensorize_paths]):
+        #     self.logger.info("tensorize file already exists...")
+        #     return
+        for _path in all_tensorize_paths:
+            if os.path.exists(_path):
+                self.logger.info("Tensorize file already exists! Deleting and re-processing...")
+                os.remove(_path)
 
-        unique_task_names = set([dp["task"] for dp in train_data])
+        unique_task_names = list(dict.fromkeys([dp["task"] for dp in train_data])) # Equivalent to set(ls) but maintains order
         sharded_inputs = []
         self.logger.info("sharding inputs...")
         if self.use_demonstrations or (len(unique_task_names)>200 and len(train_data)>=1638400):
+            """
+            Split data into `n_task` shards
+            """
+            print(f"Splitting data into `n_task` ({len(unique_task_names)}) shards")
             tot = 0
             for i, curr_train_task in enumerate(tqdm(unique_task_names)):
                 curr_train_data = [dp for dp in train_data if dp["task"]==curr_train_task]
@@ -445,21 +468,33 @@ class MetaICLData(object):
                     curr_train_data = [curr_train_data[i] for i in indices]
                 sharded_inputs.append(curr_train_data)
             assert len(train_data)==tot
+            assert len(sharded_inputs) == len(unique_task_names)
         else:
+            """
+            Simply split the data "as is" into `n_process` shards
+            """
+            print(f"Splitting data into n_process ({self.n_process}) shards")
             n_per_shard = math.ceil(len(train_data) / self.n_process)
             for i in range(self.n_process):
                 sharded_inputs.append(train_data[i*n_per_shard:(i+1)*n_per_shard])
+            assert len(sharded_inputs) == self.n_process
 
         inputs = {"input_ids": [], "attention_mask": [], "token_type_ids": []}
         self.logger.info(f"len(sharded_inputs) {len(sharded_inputs)}")
         self.logger.info(f"running on {self.n_process} process(es)")
-        if self.n_process==1:
+        if self.n_process==1 or not self.shuffle:
+            print("Performing single-process tensorization...")
             for in_ in tqdm(sharded_inputs):
+                print("Tensorizing", in_[0]['task'])
                 out = self._tensorize_for_training(in_)
+                # out is the k-shot context & target, tokenized
+                # represented as a dict containing keys ["input_ids", "attention_mask", "token_type_ids"]
+                # where each dict item is a 1024-length array of tokens
                 if out is not None:
                     for key in ["input_ids", "attention_mask", "token_type_ids"]:
                         inputs[key] += out[key].numpy().tolist()
         else:
+            print("Performing multi-process tensorization...")
             with Pool(self.n_process) as p:
                 for out in p.imap_unordered(self._tensorize_for_training, sharded_inputs):
                     if out is not None:
@@ -467,10 +502,19 @@ class MetaICLData(object):
                             inputs[key] += out[key].numpy().tolist()
 
         N = len(inputs["input_ids"])
-        indices = np.random.permutation(range(N))
-        for k, v in inputs.items():
-            inputs[k] = np.array(v)[indices]
-        n_per_shard = math.ceil(N / self.n_gpu)
+        print("len(inputs['input_ids'])", len(inputs["input_ids"]))
+        if self.shuffle:
+            # TODO: Why do this shuffling? Surely that breaks the context order?
+            indices = np.random.permutation(range(N))
+            for k, v in inputs.items():
+                inputs[k] = np.array(v)[indices]
+            n_per_shard = math.ceil(N / self.n_gpu)
+        else:
+            # Simply convert to np array
+            for k, v in inputs.items():
+                print(k, len(v))
+                inputs[k] = np.array(v)
+            n_per_shard = N
 
         for i, _path in enumerate(all_tensorize_paths):
             start = i*n_per_shard
@@ -524,11 +568,11 @@ class MetaICLData(object):
         text = context_text + answer_text
         return text
 
-    def print_tensorized_example(self, return_string=False):
+    def print_tensorized_example(self, return_string=False, n_examples=3):
         assert self.tensorized_inputs is not None
 
         idx = 0
-        for idx in range(20):
+        for idx in range(n_examples):
             text = f"\n\n\n\n\n\n{idx}-TH EXAMPLE ------------------------------------------"
             # text = "Checking the first example..."
             input_ids = self.tensorized_inputs["input_ids"][idx]

@@ -38,6 +38,7 @@ def main(logger, args):
 
     train_data = load_data(args.task, "train", args.k, seed=args.seed,
         max_examples_per_task=args.max_examples_per_task,
+        shuffle_examples=args.shuffle,
         shuffle_examples_seed=args.shuffle_examples_seed,
         )
     # Train data is a flat list of [json_obj, json_obj, json_obj, ...] where each json_obj is an example from relevant train.jsonl files
@@ -59,7 +60,8 @@ def main(logger, args):
                                do_tensorize=args.do_tensorize,
                                tensorize_dir=args.tensorize_dir,
                                n_process=args.n_process, n_gpu=args.n_gpu, local_rank=args.local_rank,
-                               debug_data_order=args.debug_data_order)
+                               debug_data_order=args.debug_data_order,
+                               shuffle=args.shuffle)
     metaicl_data.tensorize_for_training(train_data, keyword=args.task, seed=args.seed)
 
     # TODO: This is terrible; either unify the functions or split them into entirely separate things!
@@ -69,7 +71,8 @@ def main(logger, args):
                                do_tensorize=False,
                                tensorize_dir=args.tensorize_dir,
                                n_process=args.n_process, n_gpu=args.n_gpu, local_rank=args.local_rank,
-                               debug_data_order=args.debug_data_order)
+                               debug_data_order=args.debug_data_order,
+                               shuffle=args.shuffle)
     metaicl_data.tensorize_for_training(train_data, keyword=args.task, seed=args.seed)
 
     ######## actual training part
@@ -140,7 +143,7 @@ if __name__=='__main__':
 
     parser.add_argument("--use_demonstrations", default=True, action="store_true")
     parser.add_argument("--log_file", default=None, type=str)
-    parser.add_argument("--debug_data_order", default=False, action="store_true")
+    parser.add_argument("--debug_data_order", type=int, default=0)
 
     parser.add_argument("--num_training_steps", type=int, default=1000000)
     parser.add_argument("--validation_split", type=float, default=0.001)
@@ -155,6 +158,7 @@ if __name__=='__main__':
     parser.add_argument("--train_seed", type=int, default=1)
 
     parser.add_argument("--max_examples_per_task", type=int, default=None)
+    parser.add_argument("--shuffle", type=int, default=1)
     parser.add_argument("--shuffle_examples_seed", type=int, default=0)
 
     parser.add_argument("--lr", type=float, default=1e-5)

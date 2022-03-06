@@ -32,6 +32,7 @@ def load_data(task, split, k, seed=0, config_split=None, datasets=None,
         with open(data_path, "r") as f:
             lines = f.readlines()
             if shuffle_examples:
+                print("Shuffling examples with seed", shuffle_examples_seed)
                 np.random.seed(shuffle_examples_seed)
                 np.random.shuffle(lines)
             for idx, line in enumerate(lines):
