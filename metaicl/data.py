@@ -395,54 +395,54 @@ class MetaICLData(object):
         self.metadata = metadata
 
     def tensorize_for_training(self, train_data, keyword, seed, debug_order=False):
-        assert self.tensorize_dir is not None
+        # assert self.tensorize_dir is not None
 
-        if not os.path.exists(self.tensorize_dir):
-            os.makedirs(self.tensorize_dir)
+        # if not os.path.exists(self.tensorize_dir):
+        #     os.makedirs(self.tensorize_dir)
 
-        method_name = self.method + "-demon" if self.use_demonstrations else self.method
-        k_name = "%d-%d" % (len(train_data), self.k) if self.use_demonstrations else len(train_data)
-        length_name = "%d-%d" % (self.max_length, self.max_length_per_example) if self.use_demonstrations else self.max_length
+        # method_name = self.method + "-demon" if self.use_demonstrations else self.method
+        # k_name = "%d-%d" % (len(train_data), self.k) if self.use_demonstrations else len(train_data)
+        # length_name = "%d-%d" % (self.max_length, self.max_length_per_example) if self.use_demonstrations else self.max_length
 
-        tensorize_path = os.path.join(self.tensorize_dir,
-                                      "{}_{}_k={}_seed={}_length={}-rank=%d.pkl".format(
-                                          keyword, method_name, k_name, seed, length_name))
+        # tensorize_path = os.path.join(self.tensorize_dir,
+        #                               "{}_{}_k={}_seed={}_length={}-rank=%d.pkl".format(
+        #                                   keyword, method_name, k_name, seed, length_name))
 
-        if self.local_rank==-1:
-            self.logger.info(tensorize_path)
-        else:
-            self.logger.info(tensorize_path % self.local_rank)
-        all_tensorize_paths = [tensorize_path % i for i in range(self.n_gpu)]
+        # if self.local_rank==-1:
+        #     self.logger.info(tensorize_path)
+        # else:
+        #     self.logger.info(tensorize_path % self.local_rank)
+        # all_tensorize_paths = [tensorize_path % i for i in range(self.n_gpu)]
 
-        if not self.do_tensorize:
-            if not np.all([os.path.exists(_path) for _path in all_tensorize_paths]):
-                self.logger.info("Tensorization was not done. Run with `--do_tensorize` without distributed mode"
-                            "and then run training command again")
-                raise NotImplementedError()
+        # if not self.do_tensorize:
+        #     if not np.all([os.path.exists(_path) for _path in all_tensorize_paths]):
+        #         self.logger.info("Tensorization was not done. Run with `--do_tensorize` without distributed mode"
+        #                     "and then run training command again")
+        #         raise NotImplementedError()
 
-            if self.local_rank==-1:
-                inputs = defaultdict(list)
-                for i in range(self.n_gpu):
-                    with open(tensorize_path % i, "rb") as f:
-                        curr_inputs = pkl.load(f)
-                    for k, v in curr_inputs.items():
-                        inputs[k] += v
-            else:
-                assert 0<=self.local_rank<self.n_gpu
-                with open(tensorize_path % self.local_rank, "rb") as f:
-                    inputs = pkl.load(f)
+        #     if self.local_rank==-1:
+        #         inputs = defaultdict(list)
+        #         for i in range(self.n_gpu):
+        #             with open(tensorize_path % i, "rb") as f:
+        #                 curr_inputs = pkl.load(f)
+        #             for k, v in curr_inputs.items():
+        #                 inputs[k] += v
+        #     else:
+        #         assert 0<=self.local_rank<self.n_gpu
+        #         with open(tensorize_path % self.local_rank, "rb") as f:
+        #             inputs = pkl.load(f)
 
-            self.tensorized_inputs = inputs
-            return
-
-        assert self.local_rank==-1
-        # if any([os.path.exists(_path) for _path in all_tensorize_paths]):
-        #     self.logger.info("tensorize file already exists...")
+        #     self.tensorized_inputs = inputs
         #     return
-        for _path in all_tensorize_paths:
-            if os.path.exists(_path):
-                self.logger.info("Tensorize file already exists! Deleting and re-processing...")
-                os.remove(_path)
+
+        # assert self.local_rank==-1
+        # # if any([os.path.exists(_path) for _path in all_tensorize_paths]):
+        # #     self.logger.info("tensorize file already exists...")
+        # #     return
+        # for _path in all_tensorize_paths:
+        #     if os.path.exists(_path):
+        #         self.logger.info("Tensorize file already exists! Deleting and re-processing...")
+        #         os.remove(_path)
 
         unique_task_names = list(dict.fromkeys([dp["task"] for dp in train_data])) # Equivalent to set(ls) but maintains order
         sharded_inputs = []
@@ -516,15 +516,19 @@ class MetaICLData(object):
                 inputs[k] = np.array(v)
             n_per_shard = N
 
-        for i, _path in enumerate(all_tensorize_paths):
-            start = i*n_per_shard
-            end = (i+1)*n_per_shard
-            curr_inputs = {k:v[start:end].tolist() for k, v in inputs.items()}
-            with open(_path, "wb") as f:
-                pkl.dump(curr_inputs, f)
-            self.logger.info("Preprocessing done for i=%d" % i)
+        # for i, _path in enumerate(all_tensorize_paths):
+        #     start = i*n_per_shard
+        #     end = (i+1)*n_per_shard
+        #     curr_inputs = {k:v[start:end].tolist() for k, v in inputs.items()}
+        #     with open(_path, "wb") as f:
+        #         pkl.dump(curr_inputs, f)
+        #     self.logger.info("Preprocessing done for i=%d" % i)
 
-        self.logger.info("Finish saving preprocessed data ...")
+        # self.logger.info("Finish saving preprocessed data ...")
+
+        for k, v in inputs.items():
+            inputs[k] = v.tolist()
+        self.tensorized_inputs = inputs
 
     def print_batch(self, batch, batch_idx=None):
         input_ids = batch[0][0]

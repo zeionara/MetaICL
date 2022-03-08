@@ -9,6 +9,7 @@ import numpy as np
 import os
 import torch
 import torch.nn.functional as F
+import json
 
 import wandb
 from tqdm import tqdm
@@ -20,7 +21,7 @@ from utils.utils import get_checkpoint_id, download_file
 
 class MetaICLModel(object):
 
-    def __init__(self, logger=None, out_dir=None, fp16=True, local_rank=-1, model_id="", task=None, debug_data_order=False):
+    def __init__(self, logger=None, out_dir=None, fp16=True, local_rank=-1, model_id="", task=None, debug_data_order=False, model_type=None):
         if logger is None:
             class Logger():
                 def info(self, text):
@@ -34,6 +35,7 @@ class MetaICLModel(object):
         self.model_id = model_id
         self.task = task
         self.debug_data_order = debug_data_order
+        self.model_type = model_type
 
         if self.local_rank == -1:
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -53,6 +55,8 @@ class MetaICLModel(object):
         self.model_name = None
         self.model = None
         self.mode = None
+        self.global_step = None
+        self.best_task_dev_score_logfile = os.path.join(self.out_dir, f"{self.model_type}-best_task_dev_score.json")
 
     def __str__(self):
         text = "[MetaICL Model]: "
@@ -101,19 +105,23 @@ class MetaICLModel(object):
             self.model_name = gpt2
         else:
             self.model_name = checkpoint
-            _id = get_checkpoint_id(checkpoint)
-            if _id is not None:
-                method, setting, _id = _id
-                keyword = checkpoint
-                checkpoint = os.path.join("checkpoints", method, setting)
-                if self.local_rank <= 0:
-                    if os.path.exists(checkpoint):
-                        self.logger.info("Reusing checkpoint at %s" % checkpoint)
-                    else:
-                        self.logger.info("Downloading %s in %s", keyword, checkpoint)
-                    download_file(_id, checkpoint)
+            if checkpoint.endswith('best_task_dev_score.pt'):
+                with open(self.best_task_dev_score_logfile, 'r') as f:
+                    self.global_step = json.load(f)['global_step']
+                    self.logger.info("Reusing checkpoint at %s" % checkpoint)
+            else:
+                _id = get_checkpoint_id(checkpoint)
+                if _id is not None:
+                    method, setting, _id = _id
+                    keyword = checkpoint
+                    checkpoint = os.path.join("checkpoints", method, setting)
+                    if self.local_rank <= 0:
+                        if not os.path.exists(checkpoint):
+                            self.logger.info("Downloading %s in %s", keyword, checkpoint)
+                            download_file(_id, checkpoint)
 
             assert os.path.exists(checkpoint), checkpoint
+            self.logger.info("Reusing checkpoint at %s" % checkpoint)
             if self.local_rank <= 0:
                 self.logger.info("Loading the model from %s" % checkpoint)
             state_dict = torch.load(checkpoint)
@@ -125,7 +133,10 @@ class MetaICLModel(object):
         if self.local_rank <= 0:
             model_state_dict = {key[7:] if key.startswith("module.") else key: value.cpu()
                                 for key, value in self.model.state_dict().items()}
-            torch.save(model_state_dict, os.path.join(self.out_dir, f"model{self.model_id}-{step}.pt"))
+            if step == 'best_task_dev_score':
+                torch.save(model_state_dict, os.path.join(self.out_dir, f"{self.model_type}-best_task_dev_score.pt"))
+            else:
+                torch.save(model_state_dict, os.path.join(self.out_dir, f"model{self.model_id}-{step}.pt"))
             self.logger.info(f"Saving model parameters at step={step}")
 
     def setup_optimizer(self, optimization, num_training_steps, lr, weight_decay, warmup_steps):
@@ -263,7 +274,8 @@ class MetaICLModel(object):
         self.logger.info("Training {} parameters on {} examples for {} steps using {} GPUs".format(
             n_trainable_params, len(data), num_training_steps, self.n_gpu))
 
-        global_step = 0
+        global_step = 0 if self.global_step is None else self.global_step
+        initial_step = global_step # Important for resuming from checkpoints
         stop_training=False
         train_losses = []
         best_accuracy = -1
@@ -271,9 +283,7 @@ class MetaICLModel(object):
         best_val_loss = np.inf
         best_dev_score = -np.inf
 
-        epoch = 0
         while True: 
-            self.logger.info(f"Epoch {epoch}")
             for batch_idx, batch in enumerate(dataloader):
 
                 # Evaluate before we train on the batch
@@ -297,8 +307,22 @@ class MetaICLModel(object):
                     if dev_score > best_dev_score:
                         best_dev_score = dev_score
                         # self.save(f"best_dev_score")
-                        wandb.run.summary["best_dev_score"] = best_dev_score
+                        wandb.run.summary["best_dev_score"] = dev_score
                         wandb.run.summary["best_dev_score_global_step"] = global_step
+
+                        # Additionally keep track of the best dev score across any runs for this task
+                        if os.path.exists(self.best_task_dev_score_logfile):
+                            with open(self.best_task_dev_score_logfile, 'r') as f:
+                                best_task_dev_score = json.load(f)['score']
+                        else:
+                            best_task_dev_score = 0
+                        if dev_score > best_task_dev_score:
+                            with open(self.best_task_dev_score_logfile, 'w') as f:
+                                json.dump({'score': best_task_dev_score, 'global_step': global_step, 'model_id': self.model_id}, f)
+                            wandb.run.summary["best_task_dev_score"] = dev_score
+                            wandb.run.summary["best_task_dev_score_global_step"] = global_step
+                            self.save(f"best_task_dev_score")
+
 
                 # Run model through train batch
                 input_ids=batch[0].to(self.device)
@@ -326,7 +350,7 @@ class MetaICLModel(object):
                     self.logger.info("local rank %d\tglobal step %d\ttrain loss %.2f" % (self.local_rank, global_step, train_loss))
                     wandb.log({
                         "global_step": global_step,
-                        "epoch": epoch,
+                        "epoch": global_step / float(len(dataloader)),
                         "train/loss": train_loss,
                         "val/loss": val_loss,
                         "dev": dev_results_dict,
@@ -350,11 +374,10 @@ class MetaICLModel(object):
                     self.model.zero_grad()
 
                 global_step += 1
-                epoch = global_step / float(len(dataloader))
-                if global_step > num_training_steps:
+                if global_step - initial_step > num_training_steps:
                     break
 
-            if global_step > num_training_steps:
+            if global_step - initial_step > num_training_steps:
                 break
 
         self.logger.info("Finish training")

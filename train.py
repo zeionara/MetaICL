@@ -64,16 +64,16 @@ def main(logger, args):
                                shuffle=args.shuffle)
     metaicl_data.tensorize_for_training(train_data, keyword=args.task, seed=args.seed)
 
-    # TODO: This is terrible; either unify the functions or split them into entirely separate things!
-    ######### load tensorize data without do_tensorize
-    metaicl_data = MetaICLData(logger, tokenizer, args.method, args.use_demonstrations,
-                               args.test_k, max_length, args.max_length_per_example,
-                               do_tensorize=False,
-                               tensorize_dir=args.tensorize_dir,
-                               n_process=args.n_process, n_gpu=args.n_gpu, local_rank=args.local_rank,
-                               debug_data_order=args.debug_data_order,
-                               shuffle=args.shuffle)
-    metaicl_data.tensorize_for_training(train_data, keyword=args.task, seed=args.seed)
+    # # TODO: This is terrible; either unify the functions or split them into entirely separate things!
+    # ######### load tensorize data without do_tensorize
+    # metaicl_data = MetaICLData(logger, tokenizer, args.method, args.use_demonstrations,
+    #                            args.test_k, max_length, args.max_length_per_example,
+    #                            do_tensorize=False,
+    #                            tensorize_dir=args.tensorize_dir,
+    #                            n_process=args.n_process, n_gpu=args.n_gpu, local_rank=args.local_rank,
+    #                            debug_data_order=args.debug_data_order,
+    #                            shuffle=args.shuffle)
+    # metaicl_data.tensorize_for_training(train_data, keyword=args.task, seed=args.seed)
 
     ######## actual training part
 
@@ -111,9 +111,10 @@ def main(logger, args):
     if not os.path.exists(args.out_dir):
         os.makedirs(args.out_dir)
 
+    model_type = f"{args.train_algo}_m{args.max_examples_per_task}"
     metaicl_model = MetaICLModel(
         logger, args.out_dir, args.fp16, args.local_rank,
-        model_id=slurm_job_id, task=args.task, debug_data_order=args.debug_data_order)
+        model_id=slurm_job_id, task=args.task, debug_data_order=args.debug_data_order, model_type=model_type)
     metaicl_model.load(args.init_checkpoint, args.gpt2)
     metaicl_model.to_device()
     metaicl_model.setup_optimizer(args.optimization, args.num_training_steps, args.lr,
@@ -148,7 +149,7 @@ if __name__=='__main__':
     parser.add_argument("--num_training_steps", type=int, default=1000000)
     parser.add_argument("--validation_split", type=float, default=0.001)
     parser.add_argument("--save_period", type=int, default=10000)
-    parser.add_argument("--log_period", type=int, default=500)
+    parser.add_argument("--log_period", type=int, default=2000)
 
     parser.add_argument("--train_algo", type=str, default=None)
     parser.add_argument("--task", type=str, default="SST-2")
