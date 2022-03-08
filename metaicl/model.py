@@ -232,6 +232,8 @@ class MetaICLModel(object):
         })
 
         results_dict = test.main(self.logger, args, self)
+        # clean up tmp model
+        os.remove(os.path.join(self.out_dir, f"model{self.model_id}-tmp.pt"))
         return results_dict
 
     def evaluate_validation_loss(self, val_loader):
