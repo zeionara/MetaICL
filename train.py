@@ -15,6 +15,7 @@ import string
 import logging
 import numpy as np
 
+from pathlib import Path
 from collections import Counter, defaultdict
 
 import wandb
@@ -42,6 +43,7 @@ def main(logger, args):
         shuffle_examples_seed=args.shuffle_examples_seed,
         )
     # Train data is a flat list of [json_obj, json_obj, json_obj, ...] where each json_obj is an example from relevant train.jsonl files
+    num_tasks = len(set([dp["task"] for dp in train_data]))
 
     train_counter = Counter()
     for dp in train_data:
@@ -94,6 +96,7 @@ def main(logger, args):
     wandb.config.update(args) # add all argparse args as config variables
     wandb.config.update({
         'slurm_job_id': slurm_job_id,
+        'num_tasks': num_tasks,
     })
 
     random.seed(args.train_seed)
@@ -111,7 +114,12 @@ def main(logger, args):
     if not os.path.exists(args.out_dir):
         os.makedirs(args.out_dir)
 
-    model_type = f"{args.train_algo}_m{args.max_examples_per_task}"
+    # Model type is used to differentiate checkpoints
+    if args.init_checkpoint:
+        init_checkpoint_dataset = Path(args.init_checkpoint).parent.stem
+        model_type = f"{args.train_algo}_init{init_checkpoint_dataset}_m{args.max_examples_per_task}"
+    else:
+        model_type = f"{args.train_algo}_m{args.max_examples_per_task}"
     metaicl_model = MetaICLModel(
         logger, args.out_dir, args.fp16, args.local_rank,
         model_id=slurm_job_id, task=args.task, debug_data_order=args.debug_data_order, model_type=model_type)

@@ -10,8 +10,9 @@ import os
 import torch
 import torch.nn.functional as F
 import json
-
 import wandb
+
+from pathlib import Path
 from tqdm import tqdm
 from transformers import Adafactor, AdamW, get_linear_schedule_with_warmup
 from transformers import AutoModelForCausalLM
@@ -106,9 +107,17 @@ class MetaICLModel(object):
         else:
             self.model_name = checkpoint
             if checkpoint.endswith('best_task_dev_score.pt'):
-                with open(self.best_task_dev_score_logfile, 'r') as f:
-                    self.global_step = json.load(f)['global_step']
-                    self.logger.info("Reusing checkpoint at %s" % checkpoint)
+                self.logger.info("Reusing checkpoint at %s" % checkpoint)
+                checkpoint_logfile = Path(checkpoint).with_suffix('.json')
+                with open(checkpoint_logfile, 'r') as f:
+                    obj = json.load(f)
+                    self.global_step = obj['global_step']
+                    wandb.config.update({
+                        'checkpoint/score': obj['score'],
+                        'checkpoint/global_step': self.global_step,
+                        'checkpoint/model_id': obj['model_id'],
+                        'checkpoint/dataset': Path(checkpoint).parent.stem,
+                    })
             else:
                 _id = get_checkpoint_id(checkpoint)
                 if _id is not None:
@@ -319,8 +328,9 @@ class MetaICLModel(object):
                         else:
                             best_task_dev_score = 0
                         if dev_score > best_task_dev_score:
+                            best_task_dev_score = dev_score
                             with open(self.best_task_dev_score_logfile, 'w') as f:
-                                json.dump({'score': best_task_dev_score, 'global_step': global_step, 'model_id': self.model_id}, f)
+                                json.dump({'score': dev_score, 'global_step': global_step, 'model_id': self.model_id}, f)
                             wandb.run.summary["best_task_dev_score"] = dev_score
                             wandb.run.summary["best_task_dev_score_global_step"] = global_step
                             self.save(f"best_task_dev_score")
