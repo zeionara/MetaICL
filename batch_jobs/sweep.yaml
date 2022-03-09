@@ -5,23 +5,27 @@ metric:
   goal: minimize
 parameters:
   task:
-    values: ['hr_to_lr_dev', 'baseline_then_bm25spacyt50b', 'bm25spacyt50b_then_baseline', 'mix_baseline_bm25spacyt50b']
+    values: ['bm25-spacy', 'bm25spacy_t41a', 'bm25spacy_t41b', 'bm25spacy_t41c', 'dataset_006', 'dataset006_t41a', 'dataset006_t41b', 'dataset006_t41c', 'hr_to_lr_dev',]
   wandb_tags:
-    values: ['best-in-sweep,curriculum']
+    values: ['best-in-sweep,small-custom-datasets']
   gradient_accumulation_steps:
-    values: [8]
+    values: [1]
   lr:
-    values: [1e-6, 5e-6, 1e-5]
+    values: [5e-6, 1e-5]
   max_examples_per_task:
     values: [50]
-  shuffle_on:
-    values: [0]
+  shuffle:
+    values: [1]
   shuffle_examples_seed:
     values: [0]
   label_smoothing:
     values: [0.0]
   debug_data_order:
-    values: [1]
+    values: [0]
+  num_training_steps:
+    values: [100000]
+  # init_checkpoint:
+  #   values: ['checkpoints/metaicl/dataset_006/metaicl_m200-best_task_dev_score.pt']
 command:
   - python
   - ${program}
