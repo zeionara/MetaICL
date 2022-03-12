@@ -267,7 +267,7 @@ class MetaICLModel(object):
         return val_loss
 
     def do_train(self, data, batch_size, num_training_steps, save_period, log_period,
-                 gradient_accumulation_steps=1, max_grad_norm=1.0, val_split=None, label_smoothing=0.0):
+                 gradient_accumulation_steps=1, max_grad_norm=1.0, val_split=None, label_smoothing=0.0, verbose=False):
         if val_split is not None:
             dataloader, val_loader = data.get_dataloader(batch_size, is_training=True, val_split=val_split)
             self.logger.info(f"len(dataloader) {len(dataloader)}")
@@ -335,12 +335,11 @@ class MetaICLModel(object):
                             wandb.run.summary["best_task_dev_score_global_step"] = global_step
                             self.save(f"best_task_dev_score")
 
-
                 # Run model through train batch
                 input_ids=batch[0].to(self.device)
                 attention_mask=batch[1].to(self.device)
                 token_type_ids=batch[2].to(self.device)
-                if self.debug_data_order:
+                if self.debug_data_order or verbose:
                     data.print_batch(batch, batch_idx)
 
                 if len(batch)==3:

@@ -7,11 +7,13 @@
 import os
 import csv
 import json
+import random
 import string
 import numpy as np
 import pickle as pkl
 import math
 import torch
+import time
 
 from collections import defaultdict
 from functools import partial
@@ -27,7 +29,7 @@ class MetaICLData(object):
     def __init__(self, logger=None, tokenizer=None, method="channel", use_demonstrations=True, k=16,
                  max_length=1024, max_length_per_example=256,
                  do_tensorize=False, tensorize_dir=None, n_process=None, n_gpu=None, local_rank=-1,
-                 debug_data_order=False, shuffle=True):
+                 debug_data_order=False, shuffle=True, repeat_batch=1, random_seed=0):
 
         self.logger = logger
         self.tokenizer = tokenizer
@@ -44,9 +46,14 @@ class MetaICLData(object):
         self.local_rank = local_rank
         self.debug_data_order = debug_data_order
         self.shuffle = shuffle
+        self.repeat_batch = repeat_batch
 
         self.tensorized_inputs = None
         self.metadata = None
+
+        random.seed(random_seed)
+        np.random.seed(random_seed)
+        torch.random.manual_seed(random_seed)
 
         if self.tokenizer is None:
             from transformers import AutoTokenizer
@@ -276,37 +283,59 @@ class MetaICLData(object):
                         return idxs[curr_idx-n:] + idxs[:curr_idx]
 
                 # We create a few-shot prompt for every single dp in the train data
-                for dp_idx, dp in enumerate(train_data):
-                   for _ in range(N):
+                if self.shuffle:
+                    target_order = list(range(len(train_data)))
+                    random.shuffle(target_order)
+                else:
+                    target_order = []
+                    target_idx = 0
+                    for _ in train_data:
+                        target_order.append(target_idx)
+                        target_idx += (self.k + 1)
+                        target_idx = target_idx % len(train_data)
+                if len(set(target_order)) != len(train_data):
+                    print(f"WARNING: chosen targets contain repetitions ({len(set(target_order))} unique values; expected {len(train_data)})")
+                for dp_idx in target_order:
+                    
+                    for _ in range(N):
                         if self.shuffle:
                             # Draw k examples (demos) from the train data, without replacement, excluding the query example (dp_idx)
                             demon_indices = _draw_random(len(train_data), self.k, set([dp_idx]))
                         else:
                             # Draw sequentially
                             demon_indices = _draw_sequential(len(train_data), self.k, dp_idx)
-                        inputs = []
-                        for demon_idx, index in enumerate(demon_indices):
-                            if demon_idx==0:
-                                inputs += first_tokenized[index][0] + first_tokenized[index][1]
-                            else:
-                                inputs += nonfirst_tokenized[index][0] + nonfirst_tokenized[index][1]
-                            assert index!=dp_idx
-                        # nonfirst_tokenized is a list of [input, output] tuples
-                        inputs += nonfirst_tokenized[dp_idx][0]
-                        outputs = nonfirst_tokenized[dp_idx][1]
+                        
+                        k_plus_one_idxs = demon_indices + [dp_idx]
+                        for _ in range(self.repeat_batch):
+                            # Unpack after shuffling
+                            demon_indices, dp_idx = k_plus_one_idxs[:-1], k_plus_one_idxs[-1]
 
-                        # Go from tokenized lists of inputs and outputs
-                        # input_ids, attention_mask, token_type_ids = encoded
-                        # input_ids: [*input_token_ids, *output_token_ids, padding] with len(input_ids) == max_length
-                        # attention_mask: [1*len(input_token_ids), 0*len(output_token_ids), padding] with len(attention_mask) == max_length
-                        # token_type_ids: [0*len(input_token_ids), 1*len(output_token_ids), padding] with len(token_type_ids) == max_length
-                        encoded = prepro_sentence_pair_single(
-                            inputs, outputs, self.max_length, bos_token_id, eos_token_id,
-                            allow_truncation=True)
+                            inputs = []
+                            for demon_idx, index in enumerate(demon_indices):
+                                if demon_idx==0:
+                                    inputs += first_tokenized[index][0] + first_tokenized[index][1]
+                                else:
+                                    inputs += nonfirst_tokenized[index][0] + nonfirst_tokenized[index][1]
+                                assert index!=dp_idx
+                            # nonfirst_tokenized is a list of [input, output] tuples
+                            inputs += nonfirst_tokenized[dp_idx][0]
+                            outputs = nonfirst_tokenized[dp_idx][1]
 
-                        input_ids.append(encoded[0])
-                        attention_mask.append(encoded[1])
-                        token_type_ids.append(encoded[2])
+                            # Go from tokenized lists of inputs and outputs to
+                            # input_ids, attention_mask, token_type_ids = encoded
+                            # input_ids: [*input_token_ids, *output_token_ids, padding] with len(input_ids) == max_length
+                            # attention_mask: [1*len(input_token_ids), 0*len(output_token_ids), padding] with len(attention_mask) == max_length
+                            # token_type_ids: [0*len(input_token_ids), 1*len(output_token_ids), padding] with len(token_type_ids) == max_length
+                            encoded = prepro_sentence_pair_single(
+                                inputs, outputs, self.max_length, bos_token_id, eos_token_id,
+                                allow_truncation=True)
+
+                            input_ids.append(encoded[0])
+                            attention_mask.append(encoded[1])
+                            token_type_ids.append(encoded[2])
+
+                            # Shuffle
+                            random.shuffle(k_plus_one_idxs)
 
             # zero-shot learning
             else:
@@ -483,16 +512,45 @@ class MetaICLData(object):
         self.logger.info(f"len(sharded_inputs) {len(sharded_inputs)}")
         self.logger.info(f"running on {self.n_process} process(es)")
         if self.n_process==1 or not self.shuffle:
-            print("Performing single-process tensorization...")
-            for in_ in tqdm(sharded_inputs):
-                print("Tensorizing", in_[0]['task'])
+            self.logger.info("Performing single-process tensorization...")
+
+            # Tensorize data one task at a time
+            assert len(sharded_inputs) == len(unique_task_names)
+            data_by_task = [{} for _ in unique_task_names]
+            start_t = time.time()
+            for task_idx, in_ in enumerate(tqdm(sharded_inputs)):
+                self.logger.info(f"Tensorizing {in_[0]['task']}")
                 out = self._tensorize_for_training(in_)
-                # out is the k-shot context & target, tokenized
+                # out is a list of (k-shot context & target, tokenized) for each M elements in the data
                 # represented as a dict containing keys ["input_ids", "attention_mask", "token_type_ids"]
-                # where each dict item is a 1024-length array of tokens
+                # where each dict item is a M-element list of 1024-length token arrays
                 if out is not None:
-                    for key in ["input_ids", "attention_mask", "token_type_ids"]:
-                        inputs[key] += out[key].numpy().tolist()
+                    data_by_task[task_idx] = {
+                        'input_ids': out['input_ids'].numpy().tolist(),
+                        'attention_mask': out['attention_mask'].numpy().tolist(),
+                        'token_type_ids': out['token_type_ids'].numpy().tolist(),
+                    }
+            duration = time.time() - start_t
+            self.logger.info(f"Tensorizing {len(train_data)} datapoints took {duration}s ({duration / len(train_data)}s per datapoint)")
+        
+            # Go from data_by_task to a flat list of data points round-robin style
+            # (task 1 example 1, task 2 example 1, ..., task 1 example 2, task 2 example 2, ...)
+            still_have_data = True
+            data_idx = 0
+            while still_have_data:
+                still_have_data = False
+                for task_idx, task_data in enumerate(data_by_task):
+                    for repeat_idx in range(self.repeat_batch): # Add repeat batches together (no round-robin)
+                        idx = data_idx + repeat_idx
+                        # print(f"task_idx {task_idx}, idx {idx} / {len(task_data['input_ids'])}")
+                        if idx >= len(task_data['input_ids']):
+                            continue
+                        still_have_data = True
+                        for key in ["input_ids", "attention_mask", "token_type_ids"]:
+                            # This appends a single datapoint (1024-token array)
+                            tokenized_dp = task_data[key][idx]
+                            inputs[key].append(tokenized_dp)
+                data_idx += self.repeat_batch # Skip to the next batch
         else:
             print("Performing multi-process tensorization...")
             with Pool(self.n_process) as p:
@@ -501,20 +559,22 @@ class MetaICLData(object):
                         for key in ["input_ids", "attention_mask", "token_type_ids"]:
                             inputs[key] += out[key].numpy().tolist()
 
-        N = len(inputs["input_ids"])
+        N = len(inputs["input_ids"]) # Number of datapoints across all tasks
         print("len(inputs['input_ids'])", len(inputs["input_ids"]))
         if self.shuffle:
-            # TODO: Why do this shuffling? Surely that breaks the context order?
+            # This shuffling is for multi-gpu setups, to ensure each gpu gets a random sample of tasks
             indices = np.random.permutation(range(N))
             for k, v in inputs.items():
                 inputs[k] = np.array(v)[indices]
             n_per_shard = math.ceil(N / self.n_gpu)
-        else:
-            # Simply convert to np array
             for k, v in inputs.items():
-                print(k, len(v))
-                inputs[k] = np.array(v)
-            n_per_shard = N
+                inputs[k] = v.tolist()
+        # else:
+        #     # Simply convert to np array
+        #     for k, v in inputs.items():
+        #         print(k, len(v))
+        #         inputs[k] = np.array(v)
+        #     n_per_shard = N
 
         # for i, _path in enumerate(all_tensorize_paths):
         #     start = i*n_per_shard
@@ -526,8 +586,6 @@ class MetaICLData(object):
 
         # self.logger.info("Finish saving preprocessed data ...")
 
-        for k, v in inputs.items():
-            inputs[k] = v.tolist()
         self.tensorized_inputs = inputs
 
     def print_batch(self, batch, batch_idx=None):
@@ -572,7 +630,7 @@ class MetaICLData(object):
         text = context_text + answer_text
         return text
 
-    def print_tensorized_example(self, return_string=False, n_examples=3):
+    def print_tensorized_example(self, return_string=False, n_examples=10):
         assert self.tensorized_inputs is not None
 
         idx = 0

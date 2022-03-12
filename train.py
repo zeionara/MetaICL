@@ -63,7 +63,8 @@ def main(logger, args):
                                tensorize_dir=args.tensorize_dir,
                                n_process=args.n_process, n_gpu=args.n_gpu, local_rank=args.local_rank,
                                debug_data_order=args.debug_data_order,
-                               shuffle=args.shuffle)
+                               shuffle=args.shuffle,
+                               repeat_batch = args.repeat_batch)
     metaicl_data.tensorize_for_training(train_data, keyword=args.task, seed=args.seed)
 
     # # TODO: This is terrible; either unify the functions or split them into entirely separate things!
@@ -90,7 +91,7 @@ def main(logger, args):
     wandb.init(
         project="metaicl",
         tags=args.wandb_tags.split(',') if args.wandb_tags else None,
-        # mode='disabled',
+        mode='disabled' if args.disable_wandb else 'online',
     )
     wandb.run.name = f"{args.task}-{slurm_job_id}"
     wandb.config.update(args) # add all argparse args as config variables
@@ -138,7 +139,8 @@ def main(logger, args):
         gradient_accumulation_steps = args.gradient_accumulation_steps,
         max_grad_norm = args.max_grad_norm, 
         val_split = args.validation_split,
-        label_smoothing = args.label_smoothing)
+        label_smoothing = args.label_smoothing,
+        verbose = args.verbose_train)
 
 if __name__=='__main__':
 
@@ -146,13 +148,14 @@ if __name__=='__main__':
     parser.add_argument("--do_tensorize", default=True, action="store_true")
     parser.add_argument("--tensorize_dir", type=str, default="tensorized")
     parser.add_argument("--n_gpu", type=int, default=1)
-    parser.add_argument("--n_process", type=int, default=8)
+    parser.add_argument("--n_process", type=int, default=4)
     parser.add_argument("--max_length_per_example", type=int, default=256)
     parser.add_argument("--max_length", type=int, default=256)
 
     parser.add_argument("--use_demonstrations", default=True, action="store_true")
     parser.add_argument("--log_file", default=None, type=str)
     parser.add_argument("--debug_data_order", type=int, default=0)
+    parser.add_argument("--repeat_batch", type=int, default=1)
 
     parser.add_argument("--num_training_steps", type=int, default=1000000)
     parser.add_argument("--validation_split", type=float, default=0.001)
@@ -190,6 +193,8 @@ if __name__=='__main__':
     parser.add_argument("--local_rank", type=int, default=-1, help="local_rank for distributed training on gpus")
 
     parser.add_argument("--wandb_tags", type=str, default=None)
+    parser.add_argument("--disable_wandb", default=False, action="store_true")
+    parser.add_argument("--verbose_train", type=int, default=0)
 
     args = parser.parse_args()
 
