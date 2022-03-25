@@ -5,9 +5,7 @@ metric:
   goal: minimize
 parameters:
   task:
-    values: ['wdc-v2_cluster_t200']
-    # values: ['sim_001', 'sim_002', 'sim_003', 'hr_to_lr_dev', 'dataset_006']
-    # values: ['wdc-v2_random_t200a', 'wdc-v2_random_t200b', 'wdc-v2_random_t200c', 'wdc-v2']
+    values: ['wdc-v3-test-shortlist', 'wdc-v3-test-medlist', 'wdc-v3-test-longlist']
   wandb_tags:
     values: ['best-in-sweep,wdc']
   max_examples_per_task:
