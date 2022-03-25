@@ -1,0 +1,33 @@
+{
+    "train": [
+        "glue-mnli"
+    ],
+    "test": [
+        "piqa",
+        "hate_speech_offensive",
+        "google_wellformed_query",
+        "social_i_qa",
+        "circa",
+        "glue-sst2",
+        "scitail",
+        "emo",
+        "cosmos_qa",
+        "ag_news",
+        "art",
+        "paws",
+        "glue-qnli",
+        "quail",
+        "ade_corpus_v2-classification",
+        "sciq",
+        "hatexplain",
+        "emotion",
+        "glue-qqp",
+        "kilt_fever"
+    ],
+    "unseen_domain_test": [
+        "financial_phrasebank",
+        "medical_questions_pairs",
+        "poem_sentiment",
+        "climate_fever"
+    ]
+}
