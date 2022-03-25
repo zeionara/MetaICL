@@ -10,6 +10,7 @@ import json
 import string
 import numpy as np
 import torch
+from pathlib import Path
 
 def load_data(task, split, k, seed=0, config_split=None, datasets=None,
               is_null=False, max_examples_per_task=None, shuffle_examples=True, shuffle_examples_seed=0):
@@ -21,8 +22,17 @@ def load_data(task, split, k, seed=0, config_split=None, datasets=None,
             config = json.load(f)
         datasets = config[config_split]
 
-    data = []
+    # Support paths to directories containing jsonl files
+    datasets_expanded = []
     for dataset in datasets:
+        if Path(dataset).is_dir():
+            for p in Path(dataset).glob("*.jsonl"):
+                datasets_expanded.append(str(p))
+        else:
+            datasets_expanded.append(dataset)
+
+    data = []
+    for task_idx, dataset in enumerate(datasets_expanded):
         if dataset.endswith('.jsonl'):
             data_path = dataset
         else:
@@ -30,18 +40,16 @@ def load_data(task, split, k, seed=0, config_split=None, datasets=None,
                                     "{}_{}_{}_{}.jsonl".format(dataset, k, seed if split=="train" else 100,
                                                             "test" if split is None else split))
         with open(data_path, "r") as f:
-            lines = f.readlines()
+            if max_examples_per_task is None:
+                lines = f.readlines()
+            else:
+                lines = f.readlines()[:max_examples_per_task]
             if shuffle_examples:
-                print("Shuffling examples with seed", shuffle_examples_seed)
                 np.random.seed(shuffle_examples_seed)
                 np.random.shuffle(lines)
-            for idx, line in enumerate(lines):
-                if max_examples_per_task is not None:
-                    if idx >= max_examples_per_task:
-                        break
+            for line in lines:
                 dp = json.loads(line)
                 if is_null:
                     dp["input"] = "N/A"
                 data.append(dp)
     return data
-
