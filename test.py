@@ -77,7 +77,7 @@ def main(logger, args, metaicl_model=None):
 
     # Load the test tasks to evaluate on
     dev_data = load_data(args.task, args.split, args.k, seed=100, config_split=config_split,
-        is_null=args.is_null, max_examples_per_task=args.max_examples_per_task)
+        is_null=args.is_null, max_examples_per_task=args.max_examples_per_task, shuffle_examples=False)
     dev_counter = Counter()
     for dp in dev_data:
         dev_counter[dp["task"]] += 1
@@ -89,14 +89,14 @@ def main(logger, args, metaicl_model=None):
         seed = seeds[task_idx % len(seeds)] # Arbitrarily choose one random seed (for sampling k-shot context)
 
         # Load the corresponding k-shot context for the chosen seed
-        train_data = load_data(args.task, "train", args.k, seed=seed, config_split=config_split)
+        train_data = load_data(args.task, "train", args.k, seed=seed, config_split=config_split, shuffle_examples=False)
 
         logger.info(f"--------------------- SEED {seed} | TEST TASK ({task_idx} / {len(dev_counter)}): {test_task}")
         curr_dev_data = [dp for dp in dev_data if dp["task"]==test_task]
         curr_train_data = [dp for dp in train_data if dp["task"]==test_task]
         assert len(curr_dev_data)>0
         assert not args.use_demonstrations or len(curr_train_data)==args.k, \
-                (args.use_demonstrations, len(curr_train_data), args.k)
+                (args.use_demonstrations, len(curr_train_data), args.k, len(train_data), dp['task'], test_task)
 
         config_file = "config/tasks/{}.json".format(test_task)
         assert os.path.exists(config_file), config_file
@@ -168,10 +168,11 @@ def run(args, logger, task, metaicl_data, metaicl_model, train_data, dev_data, s
         metaicl_model.eval()
 
     losses = metaicl_model.do_inference(metaicl_data, args.test_batch_size)
+    logger.info(f"len(metaicl_data) {len(metaicl_data)}")
+    logger.info(f"len(losses) {len(losses)}")
+    assert len(losses)==len(metaicl_data)
     with open(cache_path, "wb") as f:
         pkl.dump(losses, f)
-
-    assert len(losses)==len(metaicl_data)
 
     if args.is_null:
         return None
@@ -190,6 +191,18 @@ def run(args, logger, task, metaicl_data, metaicl_model, train_data, dev_data, s
 
     predictions = metaicl_model.do_predict(metaicl_data, losses=losses)
     groundtruths = [dp["output"] for dp in dev_data]
+    # Print predictions for debugging
+    for dp, prediction, groundtruth in zip(dev_data, predictions, groundtruths):
+        logger.info(f"INPUT: {dp['input']}")
+        for option_idx, option in enumerate(dp['options']):
+            logger.info(f"\toption {option_idx}: {option}")
+        prediction = prediction.strip()
+        groundtruth = [gt.strip() for gt in groundtruth] if type(groundtruth)==list else groundtruth.strip()
+        logger.info(f"prediction: {prediction}")
+        logger.info(f"groundtruth: {groundtruth}")
+        is_correct = prediction in groundtruth if type(groundtruth)==list else prediction==groundtruth
+        logger.info(f"is_correct: {is_correct}")
+        logger.info(f"\n")
     perf = metaicl_data.evaluate(predictions, groundtruths, is_classification)
     logger.info("Accuracy=%s" % perf)
     return perf

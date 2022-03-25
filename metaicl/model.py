@@ -229,7 +229,7 @@ class MetaICLModel(object):
         args.k = 16
         args.split = 'test'
         args.seed = '100,13,21,42,87'
-        args.max_examples_per_task = 32
+        args.max_examples_per_task = 100
         args.use_demonstrations = True
         args.test_batch_size = 16
         args.method = 'direct'
@@ -410,6 +410,9 @@ class MetaICLModel(object):
                 labels=batch[3].cuda()
             with torch.no_grad():
                 loss = self.run_model(input_ids, attention_mask, token_type_ids, labels=labels)
+                # assert input_ids.shape == torch.Size([batch_size, 1024]), input_ids.shape
+                # assert loss.shape == torch.Size([batch_size]), loss.shape
+                # ^ above is true except when the batch is smaller than batch_size (at the end of the dataset)
             losses += loss.cpu().detach().numpy().tolist()
         return losses
 
@@ -420,6 +423,8 @@ class MetaICLModel(object):
         assert len(losses)==len(data)
         predictions = []
         for idx, dp in enumerate(data.metadata):
+            # data.metadata is a list where each element is a dict {"indices": indices, "answer": answer, "options": dp["options"]}
+            # "indices" simply holds indices to point to the corresponding dp in `losses`
             curr_label_losses = [np.sum(losses[indices]) for indices in dp["indices"]]
             prediction_idx = sorted(enumerate(curr_label_losses), key=lambda x: x[1])[0][0]
             prediction = dp["options"][prediction_idx]
