@@ -229,6 +229,8 @@ class MetaICLData(object):
                 raise NotImplementedError()
 
     def _tensorize_for_training(self, train_data):
+        if len(train_data) < 5:
+            return None
         # Train data is a flat list of [json_obj, json_obj, json_obj, ...] where each json_obj is an example from relevant train.jsonl files
         try:
             for dp in train_data:
@@ -244,6 +246,7 @@ class MetaICLData(object):
 
             # few-shot learning
             if self.use_demonstrations:
+                k = min(len(train_data) - 1, self.k)
 
                 # Apply tokenization to all datapoints, so we can conveniently grab the ones we need later
                 first_tokenized = []
@@ -291,7 +294,7 @@ class MetaICLData(object):
                     target_idx = 0
                     for _ in train_data:
                         target_order.append(target_idx)
-                        target_idx += (self.k + 1)
+                        target_idx += (k + 1)
                         target_idx = target_idx % len(train_data)
                 if len(set(target_order)) != len(train_data):
                     print(f"WARNING: chosen targets contain repetitions ({len(set(target_order))} unique values; expected {len(train_data)})")
@@ -300,10 +303,10 @@ class MetaICLData(object):
                     for _ in range(N):
                         if self.shuffle:
                             # Draw k examples (demos) from the train data, without replacement, excluding the query example (dp_idx)
-                            demon_indices = _draw_random(len(train_data), self.k, set([dp_idx]))
+                            demon_indices = _draw_random(len(train_data), k, set([dp_idx]))
                         else:
                             # Draw sequentially
-                            demon_indices = _draw_sequential(len(train_data), self.k, dp_idx)
+                            demon_indices = _draw_sequential(len(train_data), k, dp_idx)
                         
                         k_plus_one_idxs = demon_indices + [dp_idx]
                         for _ in range(self.repeat_batch):
@@ -516,20 +519,20 @@ class MetaICLData(object):
 
             # Tensorize data one task at a time
             assert len(sharded_inputs) == len(unique_task_names)
-            data_by_task = [{} for _ in unique_task_names]
+            data_by_task = []
             start_t = time.time()
-            for task_idx, in_ in enumerate(tqdm(sharded_inputs)):
+            for in_ in tqdm(sharded_inputs):
                 self.logger.info(f"Tensorizing {in_[0]['task']}")
                 out = self._tensorize_for_training(in_)
                 # out is a list of (k-shot context & target, tokenized) for each M elements in the data
                 # represented as a dict containing keys ["input_ids", "attention_mask", "token_type_ids"]
                 # where each dict item is a M-element list of 1024-length token arrays
                 if out is not None:
-                    data_by_task[task_idx] = {
+                    data_by_task.append({
                         'input_ids': out['input_ids'].numpy().tolist(),
                         'attention_mask': out['attention_mask'].numpy().tolist(),
                         'token_type_ids': out['token_type_ids'].numpy().tolist(),
-                    }
+                    })
             duration = time.time() - start_t
             self.logger.info(f"Tensorizing {len(train_data)} datapoints took {duration}s ({duration / len(train_data)}s per datapoint)")
         
@@ -539,10 +542,9 @@ class MetaICLData(object):
             data_idx = 0
             while still_have_data:
                 still_have_data = False
-                for task_idx, task_data in enumerate(data_by_task):
+                for task_data in data_by_task:
                     for repeat_idx in range(self.repeat_batch): # Add repeat batches together (no round-robin)
                         idx = data_idx + repeat_idx
-                        # print(f"task_idx {task_idx}, idx {idx} / {len(task_data['input_ids'])}")
                         if idx >= len(task_data['input_ids']):
                             continue
                         still_have_data = True
@@ -593,15 +595,15 @@ class MetaICLData(object):
         attention_mask = batch[1][0]
         token_type_ids = batch[2][0]
         
-        if batch_idx:
-            print("BATCH", batch_idx)
-        # print(f"\n\n\n\n\n\n EXAMPLE ------------------------------------------")
+        if batch_idx is not None:
+            self.logger.info(f"BATCH {batch_idx}")
+        # self.logger.info(f"\n\n\n\n\n\n EXAMPLE ------------------------------------------")
         # text = "Checking the first example..."
         # input_ids = self.tensorized_inputs["input_ids"][idx]
         # token_type_ids = self.tensorized_inputs["token_type_ids"][idx]
-        print(f'\ninput_ids: ({len(input_ids)}) {input_ids}')
-        print(f'\nattention_mask: ({len(attention_mask)}) {attention_mask}')
-        print(f'\ntoken_type_ids: ({len(token_type_ids)}) {token_type_ids}')
+        self.logger.info(f'\ninput_ids: ({len(input_ids)}) {input_ids}')
+        self.logger.info(f'\nattention_mask: ({len(attention_mask)}) {attention_mask}')
+        self.logger.info(f'\ntoken_type_ids: ({len(token_type_ids)}) {token_type_ids}')
         if type(input_ids)!=list:
             input_ids = input_ids.numpy().tolist()
         if type(attention_mask)!=list:
@@ -611,19 +613,18 @@ class MetaICLData(object):
 
         # Input is all elements up to the first occurence of '1' in token_type_ids
         input_ids_in = input_ids[:token_type_ids.index(1)]
-        print(f'\n\ncontext_input_ids: ({len(input_ids_in)}) {input_ids_in}')
+        self.logger.info(f'\n\ncontext_input_ids: ({len(input_ids_in)}) {input_ids_in}')
         # Output is all elements corresponding to '1' in token_type_ids
         input_ids_out = [_id for _id, _type_id in zip(input_ids, token_type_ids) if _type_id==1]
-        print(f'\nanswer_input_ids: ({len(input_ids_out)}) {input_ids_out}')
-        print(f'\nTotal ids excluding padding: {len(input_ids_in) + len(input_ids_out)} (if ==1024, truncation probably occurred)\n')
+        self.logger.info(f'\nanswer_input_ids: ({len(input_ids_out)}) {input_ids_out}')
+        self.logger.info(f'\nTotal ids excluding padding: {len(input_ids_in) + len(input_ids_out)} (if ==1024, truncation probably occurred)\n')
 
-
-        print("\n\nCONTEXT:\n")
+        self.logger.info("\n\nCONTEXT:\n")
         context_text = self.tokenizer.decode(input_ids_in)
-        print(context_text)
-        print("\n\nANSWER:\n")
+        self.logger.info(context_text)
+        self.logger.info("\n\nANSWER:\n")
         answer_text = self.tokenizer.decode(input_ids_out)
-        print(answer_text)
+        self.logger.info(answer_text)
 
         # if self.local_rank<=0:
         #     self.logger.info(text)
