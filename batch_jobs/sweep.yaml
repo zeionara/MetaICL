@@ -5,27 +5,33 @@ metric:
   goal: minimize
 parameters:
   task:
-    values: ['bm25-spacy', 'bm25spacy_t41a', 'bm25spacy_t41b', 'bm25spacy_t41c', 'dataset_006', 'dataset006_t41a', 'dataset006_t41b', 'dataset006_t41c', 'hr_to_lr_dev',]
+    values: ['wdc-v2_cluster_t200']
+    # values: ['sim_001', 'sim_002', 'sim_003', 'hr_to_lr_dev', 'dataset_006']
+    # values: ['wdc-v2_random_t200a', 'wdc-v2_random_t200b', 'wdc-v2_random_t200c', 'wdc-v2']
   wandb_tags:
-    values: ['best-in-sweep,small-custom-datasets']
+    values: ['best-in-sweep,wdc']
+  max_examples_per_task:
+    values: [200]
   gradient_accumulation_steps:
     values: [1]
   lr:
-    values: [5e-6, 1e-5]
-  max_examples_per_task:
-    values: [50]
+    values: [5e-6]
   shuffle:
     values: [1]
   shuffle_examples_seed:
-    values: [0]
+    values: [0,1,2]
   label_smoothing:
     values: [0.0]
   debug_data_order:
     values: [0]
   num_training_steps:
     values: [100000]
+  repeat_batch:
+    values: [1]
+  verbose_train:
+    values: [0]
   # init_checkpoint:
-  #   values: ['checkpoints/metaicl/dataset_006/metaicl_m200-best_task_dev_score.pt']
+  #   values: ['checkpoints/metaicl/wdc-v2_cluster_t200/metaicl_m200-best_task_dev_score.pt']
 command:
   - python
   - ${program}
