@@ -154,6 +154,8 @@ def make_task(df, output_col_name, title, options):
         input += f" {output_col_name}:"
         task_datapoint = {
             'task': f"{title}_{output_col_name}",
+            'table_title': title,
+            'table_outputcol': output_col_name,
             'input': input,
             'output': output,
             'options': options,
@@ -162,11 +164,9 @@ def make_task(df, output_col_name, title, options):
     return task_datapoints
 
 def sanitize_filename(filename):
-    whitelist = [' ']
-    clean = "".join([c for c in filename if c.isalpha() or c.isdigit() or c in whitelist]).rstrip()
-    clean = clean[-80:]
+    clean = "".join([(c if c.isalpha() or c.isdigit() else '_') for c in filename]).rstrip()
+    clean = clean[-100:]
     return clean
-
 
 if __name__=='__main__':
 
@@ -226,9 +226,9 @@ if __name__=='__main__':
             task_datapoints = make_task(df, output_column, title, options)
 
             print(task_datapoints[0]['task'])
+
             # Save table
-            filename = sanitize_filename(task_datapoints[0]['task'])
-            outfile = out_dir / f"{filename}.jsonl"
+            outfile = out_dir / f"{sanitize_filename(filename)}_{sanitize_filename(task_datapoints[0]['task'])}.jsonl"
             if outfile.exists():
                 print(f"WARNING: {outfile} already exists! Skipping.")
                 continue

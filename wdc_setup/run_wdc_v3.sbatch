@@ -31,8 +31,9 @@ SLICE="50"
 # wget http://data.dws.informatik.uni-mannheim.de/webtables/2015-07/englishCorpus/compressed/$SLICE.tar.gz
 # tar -xvf $SLICE.tar.gz
 
-cd $USERDIR/git/MetaICL
-python filter_slice_to_longlist.py --tarfile /scratch/jc11431/MetaICL/data/wdc-v3/$SLICE.tar
-python export_task_from_tables.py --tarfile /scratch/jc11431/MetaICL/data/wdc-v3/$SLICE.tar --tables_file /scratch/jc11431/MetaICL/data/wdc-v3/$SLICE/longlist.jsonl
+cd $USERDIR/git/MetaICL/wdc_setup
+# python filter_slice_to_longlist.py --tarfile /scratch/jc11431/MetaICL/data/wdc-v3/$SLICE.tar
+# python export_tasks_from_tables.py --tarfile /scratch/jc11431/MetaICL/data/wdc-v3/$SLICE.tar --tables_file /scratch/jc11431/MetaICL/data/wdc-v3/$SLICE/longlist.jsonl
+python cluster_list_of_tables.py --input_dir /scratch/jc11431/MetaICL/data/wdc-v3/exports/ --num_clusters 50
 
 echo "EXPORT COMPLETE. Exported to /scratch/jc11431/MetaICL/data/wdc-v3/$SLICE/longlist"

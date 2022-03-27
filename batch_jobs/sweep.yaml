@@ -5,7 +5,7 @@ metric:
   goal: minimize
 parameters:
   task:
-    values: ['wdc-v3-test-shortlist', 'wdc-v3-test-medlist', 'wdc-v3-test-longlist']
+    values: ['wdc-v3-flashcards', 'wdc-v3-cluster5000', 'wdc-v3-cluster500', 'wdc-v3-cluster200', 'wdc-v3-cluster50']
   wandb_tags:
     values: ['best-in-sweep,wdc']
   max_examples_per_task:
