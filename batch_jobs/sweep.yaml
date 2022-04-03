@@ -6,59 +6,15 @@ metric:
 parameters:
   task:
     values:
-      - "cluster50_idx0_Reviews_University_Student_and_Ratings"
-      - "cluster50_idx10_Wiki_PC_of_BSD_Difference"
-      - "cluster50_idx11_KBOO_Radio_for_Portland_and"
-      - "cluster50_idx12_Wiki_SELinux_ObjectClassesPerms_Configuration_file"
-      - "cluster50_idx13_System_TWiki_Wiki_TWikiVariables_Macros"
-      - "cluster50_idx14_the_encyclopedia_free_Wikipedia_of"
-      - "cluster50_idx15_Reviews_and_Student_Ratings_Cappex"
-      - "cluster50_idx16_com_SEO_Chlooe_DBMS_NICE"
-      - "cluster50_idx17_Flashcards_Cram_com_and_Chapter"
-      - "cluster50_idx18_Quiz_By_For_Dummies_The"
-      - "cluster50_idx19_Sports_Yahoo_s_Marco_Polo"
-      - "cluster50_idx1_KDE_TechBase_Projects_FedoraProject_Project"
-      - "cluster50_idx20_API_documentation_twisted_Reference_couchbase"
-      - "cluster50_idx21_Conservapedia_Translated_Epistle_to_Genesis"
-      - "cluster50_idx22_for_and_in_Oracle_the"
-      - "cluster50_idx23_Documentation_Joomla_API_Apache_Ivy"
-      - "cluster50_idx24_User_Profile_Guide_Task_and"
-      - "cluster50_idx25_Apache_Server_HTTP_mod_Version"
-      - "cluster50_idx26_strain_ATCC_S_protein_c"
-      - "cluster50_idx27_Contents_by_Survey_UNICEF_MICS"
-      - "cluster50_idx28_Sheryl_Stewart_The_Buzz_FM"
-      - "cluster50_idx29_Eclipsepedia_of_Difference_between_revisions"
-      - "cluster50_idx2_Cisco_IOS_Series_Release_Command"
-      - "cluster50_idx30_Reviews_and_Student_Ratings_Cappex"
-      - "cluster50_idx31_Reviews_UW_University_of_Student"
-      - "cluster50_idx32_Linux_Laptop_Wiki_Asus_Toshiba"
-      - "cluster50_idx33_Guide_Sun_System_Server_Administration"
-      - "cluster50_idx34_DocWiki_Cisco_Monitoring_and_Troubleshooting"
-      - "cluster50_idx35_for_PM_Word_search_Playlist"
-      - "cluster50_idx36_Ensembl_genome_browser_Homo_sapiens"
-      - "cluster50_idx37_the_of_and_to_in"
-      - "cluster50_idx38_Reviews_and_Student_Ratings_Cappex"
-      - "cluster50_idx39_WLST_and_Commands_Reference_Command"
-      - "cluster50_idx3_Human_Homo_sapiens_precursor_protein"
-      - "cluster50_idx40_Reviews_The_University_of_Texas"
-      - "cluster50_idx41_Mouse_Mus_musculus_precursor_Rattus"
-      - "cluster50_idx42_af_dvt_Task_Main_Wiki"
-      - "cluster50_idx43_Injection_Molding_Shop_i_Detroit"
-      - "cluster50_idx44_com_SEO_website_review_Chlooe"
-      - "cluster50_idx45_Find_definitions_containing_the_Reverse"
-      - "cluster50_idx46_Reviews_University_Student_and_Ratings"
-      - "cluster50_idx47_and_Reference_Part_for_Command"
-      - "cluster50_idx48_of_and_for_in_The"
-      - "cluster50_idx49_Google_Developers_API_JavaScript_Reference"
-      - "cluster50_idx4_Flashcards_about_th_Module_A"
-      - "cluster50_idx5_of_sorted_s_bookshelf_showing"
-      - "cluster50_idx6_mgoblog_Recent_Comments_Blue_Seth"
-      - "cluster50_idx7_of_Difference_between_revisions_Joomla"
-      - "cluster50_idx8_Query_Custom_Documentation_PostgreSQL_SQL"
-      - "cluster50_idx9_and_Section_Applications_VPAT_Software"
-      - "cluster50_sampleeach"
+      # - hr_to_lr_dev
+      # - wdc-v3-cluster200
+      # - cluster50_top10clusters_max20percluster
+      - wdc4-clusters50
+      - wdc4-clusters200
+      - wdc4-clusters500
+      - wdc4-clusters2000
   wandb_tags:
-    values: ['best-in-sweep,wdc-v3-indiv-clusters']
+    values: ['best-in-sweep,full-tasks-eval,wdc-v4']
   max_examples_per_task:
     values: [200]
   gradient_accumulation_steps:
@@ -79,6 +35,12 @@ parameters:
     values: [1]
   verbose_train:
     values: [0]
+  is_cluster_dataset:
+    values: [1]
+  max_tasks_per_cluster:
+    values: [5, 20, 100]
+  # gpt2:
+  #   values: ["gpt2-xl", "gpt2-large"]
   # init_checkpoint:
   #   values: ['checkpoints/metaicl/wdc-v2_cluster_t200/metaicl_m200-best_task_dev_score.pt']
 command:

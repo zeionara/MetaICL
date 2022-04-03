@@ -11,6 +11,7 @@
 
 ## This places the standard output and standard error into the same file, in this case slurm_<job_id>.out 
 #SBATCH --output=/scratch/jc11431/slurm_logs/slurm_%A.out
+USERDIR=/home/jc11431 # This would be $HOME, except that I am sharing the same HOME dir across multiple users
 
 ## First we ensure a clean environment by purging the current one
 module purge
@@ -26,7 +27,7 @@ myquota
 nvidia-smi
 which python
 
-cd $HOME/git/MetaICL
+cd $USERDIR/git/MetaICL
 
 # hr_to_lr
 # class_to_class

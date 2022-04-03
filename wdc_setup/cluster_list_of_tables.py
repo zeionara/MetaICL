@@ -20,9 +20,11 @@ if __name__=='__main__':
     args = parser.parse_args()
 
     # Load string representations of all the files we want to cluster
-    jsonl_paths = [str(p) for p in Path(args.input_dir).glob("**/*.jsonl")]
+    jsonl_paths = [str(p) for p in Path(args.input_dir).glob("**/*.jsonl") if p.stem != "longlist"]
+    if not len(jsonl_paths):
+        raise FileNotFoundError(f"No jsonl found in dir {args.input_dir}!")
     table_strings = [] # These will be converted into embeddings for clustering
-    print("Getting string representations of jsonl tables...")
+    print(f"Getting string representations of {len(jsonl_paths)} jsonl tables...")
     for jsonl_file in tqdm(jsonl_paths):
         with open(jsonl_file) as f:
             line = f.readline()
@@ -85,35 +87,11 @@ if __name__=='__main__':
         cluster_names.append('_'.join(top_5_words))
     assert sum([len(cluster) for cluster in clustered_paths]) == len(jsonl_paths)
 
-    # Save output
-    out_dir = Path(args.input_dir).parent / f"{Path(args.input_dir).stem}-cluster{num_clusters}"
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    def save_config_file(filepath, train_files):
-        test_tasks = ["piqa", "hate_speech_offensive", "google_wellformed_query", "social_i_qa", "circa", "glue-sst2", "scitail", "emo", "cosmos_qa", "ag_news", "art", "paws", "glue-qnli", "quail", "ade_corpus_v2-classification", "sciq", "hatexplain", "emotion", "glue-qqp", "kilt_fever"]
-        task_config = {
-            "train": train_files,
-            "test": test_tasks,
-        }
-        with open(filepath, 'w') as f:
-            json.dump(task_config, f, indent=4, sort_keys=True)
-        return
-
-    # Save one member of each cluster to a config file
-    train_files = [np.random.choice(cluster) for cluster in clustered_paths if len(cluster)]
-    output_file = out_dir / f"cluster{num_clusters}_sampleeach.json"
-    save_config_file(output_file, train_files)
-    print(f"Saved {len(train_files)} samples to {output_file}. ({num_clusters - len(train_files)} / {num_clusters} empty)")
-
     # Save all clusters
-    all_clusters_file = out_dir / f"allclusters{num_clusters}.txt"
+    all_clusters_file = Path(args.input_dir) / f"allclusters{num_clusters}.json"
+    save_obj = {}
+    for cluster_idx, (cluster, cluster_name) in enumerate(zip(clustered_paths, cluster_names)):
+        cluster_id = f"cluster{num_clusters}_idx{cluster_idx}_{cluster_name}"
+        save_obj[cluster_id] = cluster
     with open(all_clusters_file, 'w') as f:
-        for cluster_id, (cluster, cluster_name) in enumerate(zip(clustered_paths, cluster_names)):
-            # Write to common file for easy browsing
-            print(f"\nCLUSTER {cluster_id}: {cluster_name} ({len(cluster)} tables)", file=f)
-            for path in cluster:
-                print(path, file=f)
-
-            # Write each cluster to its own file
-            single_cluster_file = out_dir / f"cluster{num_clusters}_idx{cluster_id}_{cluster_name}.json"
-            save_config_file(single_cluster_file, cluster)
+        json.dump(save_obj, f, indent=4, sort_keys=True)

@@ -41,6 +41,8 @@ def main(logger, args):
         max_examples_per_task=args.max_examples_per_task,
         shuffle_examples=args.shuffle,
         shuffle_examples_seed=args.shuffle_examples_seed,
+        is_cluster_dataset=args.is_cluster_dataset,
+        max_tasks_per_cluster=args.max_tasks_per_cluster,
         )
     # Train data is a flat list of [json_obj, json_obj, json_obj, ...] where each json_obj is an example from relevant train.jsonl files
     num_tasks = len(set([dp["task"] for dp in train_data]))
@@ -195,6 +197,9 @@ if __name__=='__main__':
     parser.add_argument("--wandb_tags", type=str, default=None)
     parser.add_argument("--disable_wandb", default=False, action="store_true")
     parser.add_argument("--verbose_train", type=int, default=0)
+
+    parser.add_argument("--is_cluster_dataset", type=int, default=0)
+    parser.add_argument("--max_tasks_per_cluster", type=int, default=None)
 
     args = parser.parse_args()
 

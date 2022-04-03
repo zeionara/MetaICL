@@ -96,6 +96,7 @@ class MetaICLModel(object):
         if checkpoint is not None and checkpoint.startswith("gpt"):
             gpt2 = checkpoint
             checkpoint = None
+        self.gpt2 = gpt2
         if checkpoint is None:
             if gpt2.startswith("gpt2"):
                 model = AutoModelForCausalLM.from_pretrained(gpt2)
@@ -225,11 +226,12 @@ class MetaICLModel(object):
         parser.add_argument("--gpt2", type=str, default="gpt2-large")
         args = parser.parse_args(["--out_dir", "/tmp"])
 
-        args.task = self.task
+        args.task = 'all_tasks_test' # self.task
+        args.gpt2 = self.gpt2
         args.k = 16
         args.split = 'test'
         args.seed = '100,13,21,42,87'
-        args.max_examples_per_task = 100
+        args.max_examples_per_task = 50
         args.use_demonstrations = True
         args.test_batch_size = 16
         args.method = 'direct'
