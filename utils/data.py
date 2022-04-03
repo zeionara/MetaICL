@@ -12,11 +12,18 @@ import numpy as np
 import torch
 from pathlib import Path
 
-def load_data_from_clusters(task, max_tasks_per_cluster=None, max_examples_per_task=None, shuffle_examples=True, shuffle_examples_seed=0):
+def load_data_from_clusters(task, max_tasks_per_cluster=None, max_examples_per_task=None, shuffle_examples=True, shuffle_examples_seed=0, cluster_idxs=None):
     jsonl_files = []
     with open(Path("config") / f"{task}.json") as f:
         obj = json.load(f)
         for cluster_name, cluster_file_list in obj.items():
+            if cluster_idxs: # Whitelist to only train on particular cluster idxs
+                # cluster_name is something like "cluster50_idx11_strain_ATCC_S_c_Escherichia"
+                idxpart = [part for part in cluster_name.split('_') if part.startswith('idx')]
+                cluster_idx = int(idxpart[0][len('idx'):])
+                if cluster_idx not in cluster_idxs:
+                    continue
+
             if shuffle_examples:
                 np.random.seed(shuffle_examples_seed)
                 np.random.shuffle(cluster_file_list)
@@ -45,7 +52,8 @@ def load_data_from_clusters(task, max_tasks_per_cluster=None, max_examples_per_t
 
 
 def load_data(task, split, k, seed=0, config_split=None, datasets=None,
-              is_null=False, max_examples_per_task=None, shuffle_examples=True, shuffle_examples_seed=0, is_cluster_dataset=0, max_tasks_per_cluster=None):
+              is_null=False, max_examples_per_task=None, shuffle_examples=True, shuffle_examples_seed=0, 
+              is_cluster_dataset=0, max_tasks_per_cluster=None, cluster_idxs=None):
     if is_cluster_dataset:
         if split != 'train':
             raise NotImplementedError('Cluster dataset only supported for training.')
@@ -54,7 +62,8 @@ def load_data(task, split, k, seed=0, config_split=None, datasets=None,
             max_tasks_per_cluster=max_tasks_per_cluster, 
             max_examples_per_task=max_examples_per_task, 
             shuffle_examples=shuffle_examples, 
-            shuffle_examples_seed=shuffle_examples_seed)
+            shuffle_examples_seed=shuffle_examples_seed,
+            cluster_idxs=cluster_idxs)
 
     if config_split is None:
         config_split = split

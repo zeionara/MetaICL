@@ -10,11 +10,11 @@ parameters:
       # - wdc-v3-cluster200
       # - cluster50_top10clusters_max20percluster
       - wdc4-clusters50
-      - wdc4-clusters200
-      - wdc4-clusters500
-      - wdc4-clusters2000
+      # - wdc4-clusters200
+      # - wdc4-clusters500
+      # - wdc4-clusters2000
   wandb_tags:
-    values: ['best-in-sweep,full-tasks-eval,wdc-v4']
+    values: ['best-in-sweep,wdc-v4-indiv-clusters']
   max_examples_per_task:
     values: [200]
   gradient_accumulation_steps:
@@ -24,21 +24,23 @@ parameters:
   shuffle:
     values: [1]
   shuffle_examples_seed:
-    values: [0,1,2]
+    values: [0]
   label_smoothing:
     values: [0.0]
   debug_data_order:
     values: [0]
   num_training_steps:
-    values: [50000]
+    values: [30000]
   repeat_batch:
     values: [1]
   verbose_train:
     values: [0]
   is_cluster_dataset:
     values: [1]
+  cluster_idxs:
+    values: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49]
   max_tasks_per_cluster:
-    values: [5, 20, 100]
+    values: [100]
   # gpt2:
   #   values: ["gpt2-xl", "gpt2-large"]
   # init_checkpoint:
