@@ -7,7 +7,7 @@
 #SBATCH --time=48:00:00
 #SBATCH --mem=32GB
 
-#SBATCH --array=1-50
+#SBATCH --array=1-27
 #SBATCH --job-name=sweep_job
 
 ## This places the standard output and standard error into the same file, in this case slurm_<job_id>_<arr_idx>.out 
