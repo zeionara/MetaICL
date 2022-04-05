@@ -22,7 +22,7 @@ from utils.utils import get_checkpoint_id, download_file
 
 class MetaICLModel(object):
 
-    def __init__(self, logger=None, out_dir=None, fp16=True, local_rank=-1, model_id="", task=None, debug_data_order=False, model_type=None):
+    def __init__(self, logger=None, out_dir=None, fp16=True, local_rank=-1, model_id="", task=None, debug_data_order=False, model_type=None, test_tasks=None):
         if logger is None:
             class Logger():
                 def info(self, text):
@@ -35,6 +35,7 @@ class MetaICLModel(object):
         self.local_rank = local_rank
         self.model_id = model_id
         self.task = task
+        self.test_tasks = test_tasks
         self.debug_data_order = debug_data_order
         self.model_type = model_type
 
@@ -226,12 +227,15 @@ class MetaICLModel(object):
         parser.add_argument("--gpt2", type=str, default="gpt2-large")
         args = parser.parse_args(["--out_dir", "/tmp"])
 
-        args.task = 'all_tasks_test' # self.task
+        if self.test_tasks:
+            args.task = self.test_tasks
+        else:
+            args.task = self.task
         args.gpt2 = self.gpt2
         args.k = 16
         args.split = 'test'
         args.seed = '100,13,21,42,87'
-        args.max_examples_per_task = 50
+        args.max_examples_per_task = 30
         args.use_demonstrations = True
         args.test_batch_size = 16
         args.method = 'direct'
@@ -323,19 +327,19 @@ class MetaICLModel(object):
                         wandb.run.summary["best_dev_score"] = dev_score
                         wandb.run.summary["best_dev_score_global_step"] = global_step
 
-                        # Additionally keep track of the best dev score across any runs for this task
-                        if os.path.exists(self.best_task_dev_score_logfile):
-                            with open(self.best_task_dev_score_logfile, 'r') as f:
-                                best_task_dev_score = json.load(f)['score']
-                        else:
-                            best_task_dev_score = 0
-                        if dev_score > best_task_dev_score:
-                            best_task_dev_score = dev_score
-                            with open(self.best_task_dev_score_logfile, 'w') as f:
-                                json.dump({'score': dev_score, 'global_step': global_step, 'model_id': self.model_id}, f)
-                            wandb.run.summary["best_task_dev_score"] = dev_score
-                            wandb.run.summary["best_task_dev_score_global_step"] = global_step
-                            self.save(f"best_task_dev_score")
+                        # # Additionally keep track of the best dev score across any runs for this task
+                        # if os.path.exists(self.best_task_dev_score_logfile):
+                        #     with open(self.best_task_dev_score_logfile, 'r') as f:
+                        #         best_task_dev_score = json.load(f)['score']
+                        # else:
+                        #     best_task_dev_score = 0
+                        # if dev_score > best_task_dev_score:
+                        #     best_task_dev_score = dev_score
+                        #     with open(self.best_task_dev_score_logfile, 'w') as f:
+                        #         json.dump({'score': dev_score, 'global_step': global_step, 'model_id': self.model_id}, f)
+                        #     wandb.run.summary["best_task_dev_score"] = dev_score
+                        #     wandb.run.summary["best_task_dev_score_global_step"] = global_step
+                        #     self.save(f"best_task_dev_score")
 
                 # Run model through train batch
                 input_ids=batch[0].to(self.device)
