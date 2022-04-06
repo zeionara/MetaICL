@@ -17,14 +17,19 @@ parameters:
       # - class_to_class
       # - wdc-v3-cluster200
       # - cluster50_top10clusters_max20percluster
-      - wdc4-clusters50
+      # - wdc4-clusters50
       # - wdc4-clusters200
       # - wdc4-clusters500
       # - wdc4-clusters2000
+      - artificialdatasets_yesno2yesno
+      - artificialdatasets_sentence2yesno
+      - artificialdatasets_sentence2word
+      - artificialdatasets_word2sentence
+      - artificialdatasets_word2word
   wandb_tags:
-    values: ['best-in-sweep,wdc-v4-best-clusters50']
+    values: ['best-in-sweep,artificial-datasets-full-eval']
   max_examples_per_task:
-    values: [200]
+    values: [100000]
   gradient_accumulation_steps:
     values: [1]
   lr:
@@ -32,13 +37,13 @@ parameters:
   shuffle:
     values: [1]
   shuffle_examples_seed:
-    values: [0]
+    values: [0,1,2]
   label_smoothing:
     values: [0.0]
   debug_data_order:
     values: [0]
   num_training_steps:
-    values: [50000]
+    values: [20000]
   repeat_batch:
     values: [1]
   verbose_train:
@@ -47,16 +52,16 @@ parameters:
     values: [2000]
   test_tasks:
     values: ['all_tasks_test']
-  is_cluster_dataset:
-    values: [1]
-  cluster_idxs:
-    values:
-      - '6,3,21,13,2,12,17,10,18,16'
-      - '6,3,21,13,2'
-      - '48,6,13,47,21,42,17,10,25,33'
-      - '48,6,13,47,21'
-  max_tasks_per_cluster:
-    values: [20,50]
+  # is_cluster_dataset:
+  #   values: [1]
+  # cluster_idxs:
+  #   values:
+  #     - '6,3,21,13,2,12,17,10,18,16'
+  #     - '6,3,21,13,2'
+  #     - '48,6,13,47,21,42,17,10,25,33'
+  #     - '48,6,13,47,21'
+  # max_tasks_per_cluster:
+  #   values: [20,50]
   # gpt2:
   #   values: ["gpt2-xl", "gpt2-large"]
   # init_checkpoint:

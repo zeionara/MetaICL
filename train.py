@@ -200,7 +200,7 @@ if __name__=='__main__':
     parser.add_argument("--disable_wandb", default=False, action="store_true")
     parser.add_argument("--verbose_train", type=int, default=0)
 
-    parser.add_argument("--test_tasks", type=int, default=None) # 'all_tasks_test', 
+    parser.add_argument("--test_tasks", type=str, default=None) # 'all_tasks_test', 
     parser.add_argument("--is_cluster_dataset", type=int, default=0)
     parser.add_argument("--cluster_idxs", type=str, default=None)
     parser.add_argument("--max_tasks_per_cluster", type=int, default=None)
