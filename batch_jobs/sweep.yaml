@@ -9,27 +9,27 @@ parameters:
       # - non_qa_to_qa
       # - hr_to_lr_noinst
       # - hr_to_lr
-      # - hr_to_lr_dev
+      - hr_to_lr_dev
       # - non_nli_to_nli
       # - non_paraphrase_to_paraphrase
       # - non_class_to_class
       # - qa_to_qa
       # - class_to_class
-      # - wdc-v3-cluster200
-      # - cluster50_top10clusters_max20percluster
+      - wdc-v3-cluster200
+      - cluster50_top10clusters_max20percluster
       # - wdc4-clusters50
       # - wdc4-clusters200
       # - wdc4-clusters500
       # - wdc4-clusters2000
-      - artificialdatasets_yesno2yesno
-      - artificialdatasets_sentence2yesno
-      - artificialdatasets_sentence2word
-      - artificialdatasets_word2sentence
-      - artificialdatasets_word2word
+      # - artificialdatasets_yesno2yesno
+      # - artificialdatasets_sentence2yesno
+      # - artificialdatasets_sentence2word
+      # - artificialdatasets_word2sentence
+      # - artificialdatasets_word2word
   wandb_tags:
-    values: ['best-in-sweep,artificial-datasets-full-eval']
+    values: ['best-in-sweep,gpt2-xl']
   max_examples_per_task:
-    values: [100000]
+    values: [200]
   gradient_accumulation_steps:
     values: [1]
   lr:
@@ -43,7 +43,7 @@ parameters:
   debug_data_order:
     values: [0]
   num_training_steps:
-    values: [20000]
+    values: [100000]
   repeat_batch:
     values: [1]
   verbose_train:
@@ -62,8 +62,8 @@ parameters:
   #     - '48,6,13,47,21'
   # max_tasks_per_cluster:
   #   values: [20,50]
-  # gpt2:
-  #   values: ["gpt2-xl", "gpt2-large"]
+  gpt2:
+    values: ["gpt2-xl"]
   # init_checkpoint:
   #   values: ['checkpoints/metaicl/wdc-v2_cluster_t200/metaicl_m200-best_task_dev_score.pt']
 command:
