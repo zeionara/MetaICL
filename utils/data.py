@@ -53,7 +53,8 @@ def load_data_from_clusters(task, max_tasks_per_cluster=None, max_examples_per_t
 
 def load_data(task, split, k, seed=0, config_split=None, datasets=None,
               is_null=False, max_examples_per_task=None, shuffle_examples=True, shuffle_examples_seed=0, 
-              is_cluster_dataset=0, max_tasks_per_cluster=None, cluster_idxs=None):
+              is_cluster_dataset=0, max_tasks_per_cluster=None, cluster_idxs=None,
+              use_random_label=False, predict_last_word=False, swap_input_output=False):
     if is_cluster_dataset:
         if split != 'train':
             raise NotImplementedError('Cluster dataset only supported for training.')
@@ -93,8 +94,8 @@ def load_data(task, split, k, seed=0, config_split=None, datasets=None,
         with open(data_path, "r") as f:
             lines = f.readlines()
 
+            np.random.seed(shuffle_examples_seed)
             if shuffle_examples:
-                np.random.seed(shuffle_examples_seed)
                 np.random.shuffle(lines)
             if max_examples_per_task:
                 lines = lines[:max_examples_per_task]
@@ -105,6 +106,16 @@ def load_data(task, split, k, seed=0, config_split=None, datasets=None,
                     raise NotImplementedError(f"{dataset} is missing options for test evaluation; only multi-choice questions are supported for test evaluation!")
                 if is_null:
                     dp["input"] = "N/A"
+                if use_random_label and len(dp['options']) >= 2:
+                    dp['output'] = np.random.choice(dp['options'])
+                elif predict_last_word:
+                    input_without_last_word, last_word = dp["input"].rsplit(' ', 1)
+                    dp["input"] = input_without_last_word
+                    dp["output"] = last_word
+                    dp["options"] = []
+                elif swap_input_output:
+                    dp["input"], dp["output"] = dp["output"], dp["input"]
+                    dp["options"] = []
                 data.append(dp)
     return data
 
