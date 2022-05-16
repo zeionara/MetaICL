@@ -40,7 +40,7 @@ def main(logger, args, metaicl_model=None):
         else:
             assert args.global_step is not None
             checkpoint = os.path.join(args.out_dir, "model-{}.pt".format(args.global_step))
-        assert os.path.exists(checkpoint)
+        assert os.path.exists(checkpoint), checkpoint
     else:
         checkpoint = None
         add_newlines = args.gpt2=="gpt-j-6B"

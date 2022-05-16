@@ -23,7 +23,7 @@ from transformers import GPT2Tokenizer, AutoTokenizer
 
 from metaicl.data import MetaICLData
 from metaicl.model import MetaICLModel
-from utils.data import load_data
+from utils.data import load_anydata
 
 def main(logger, args):
     if args.gpt2.startswith("gpt2"):
@@ -33,23 +33,17 @@ def main(logger, args):
 
     if args.use_demonstrations:
         max_length = min(args.max_length * args.k, 1024)
+    else:
+        max_length = min(args.max_length, 1024)
 
     logger.info("batch_size=%d\tmax_length=%d\tmax_length_per_example=%d" % (
         args.batch_size, max_length, args.max_length_per_example))
 
-    train_data = load_data(args.task, "train", args.k, seed=args.seed,
-        max_examples_per_task=args.max_examples_per_task,
-        shuffle_examples=args.shuffle,
-        shuffle_examples_seed=args.shuffle_examples_seed,
-        is_cluster_dataset=args.is_cluster_dataset,
-        max_tasks_per_cluster=args.max_tasks_per_cluster,
-        cluster_idxs=[int(idx) for idx in str(args.cluster_idxs).split(',')] if args.cluster_idxs else None,
-        use_random_label=args.use_random_label,
-        predict_last_word=args.predict_last_word,
-        swap_input_output=args.swap_input_output,
-        )
+    train_data = load_anydata(args)
+    logger.info(f"Num examples in the final set: {len(train_data)}")
     # Train data is a flat list of [json_obj, json_obj, json_obj, ...] where each json_obj is an example from relevant train.jsonl files
     num_tasks = len(set([dp["task"] for dp in train_data]))
+    logger.info(f"Num tasks in the final set: {num_tasks}")
 
     train_counter = Counter()
     for dp in train_data:
@@ -121,16 +115,11 @@ def main(logger, args):
     if not os.path.exists(args.out_dir):
         os.makedirs(args.out_dir)
 
-    # Model type is used to differentiate checkpoints
-    if args.init_checkpoint:
-        init_checkpoint_dataset = Path(args.init_checkpoint).parent.stem
-        model_type = f"{args.train_algo}_init{init_checkpoint_dataset}_m{args.max_examples_per_task}"
-    else:
-        model_type = f"{args.train_algo}_m{args.max_examples_per_task}"
     metaicl_model = MetaICLModel(
         logger, args.out_dir, args.fp16, args.local_rank,
-        model_id=slurm_job_id, task=args.task, debug_data_order=args.debug_data_order, model_type=model_type,
-        test_tasks=args.test_tasks, max_examples_per_test=args.max_examples_per_test)
+        model_id=slurm_job_id, task=args.task, debug_data_order=args.debug_data_order,
+        test_tasks=args.test_tasks, max_examples_per_test=args.max_examples_per_test,
+        use_demonstrations=args.use_demonstrations)
     metaicl_model.load(args.init_checkpoint, args.gpt2)
     metaicl_model.to_device()
     metaicl_model.setup_optimizer(args.optimization, args.num_training_steps, args.lr,
@@ -159,7 +148,7 @@ if __name__=='__main__':
     parser.add_argument("--max_length_per_example", type=int, default=256)
     parser.add_argument("--max_length", type=int, default=256)
 
-    parser.add_argument("--use_demonstrations", default=True, action="store_true")
+    parser.add_argument("--use_demonstrations", type=int, default=1)
     parser.add_argument("--log_file", default=None, type=str)
     parser.add_argument("--debug_data_order", type=int, default=0)
     parser.add_argument("--repeat_batch", type=int, default=1)
@@ -212,6 +201,9 @@ if __name__=='__main__':
     parser.add_argument("--use_random_label", type=int, default=0)
     parser.add_argument("--predict_last_word", type=int, default=0)
     parser.add_argument("--swap_input_output", type=int, default=0)
+
+    parser.add_argument("--target_num_examples", type=int, default=8000)
+    parser.add_argument("--task_ratios", type=str, default=None)
 
     args = parser.parse_args()
 

@@ -7,8 +7,9 @@
 import os
 import csv
 import json
-import string
 import numpy as np
+import random
+import string
 import torch
 from pathlib import Path
 
@@ -18,10 +19,11 @@ def load_data_from_clusters(task, max_tasks_per_cluster=None, max_examples_per_t
         obj = json.load(f)
         for cluster_name, cluster_file_list in obj.items():
             if cluster_idxs: # Whitelist to only train on particular cluster idxs
+                cluster_idxs_list = [int(idx) for idx in str(cluster_idxs).split(',')]
                 # cluster_name is something like "cluster50_idx11_strain_ATCC_S_c_Escherichia"
                 idxpart = [part for part in cluster_name.split('_') if part.startswith('idx')]
                 cluster_idx = int(idxpart[0][len('idx'):])
-                if cluster_idx not in cluster_idxs:
+                if cluster_idx not in cluster_idxs_list:
                     continue
 
             if shuffle_examples:
@@ -50,6 +52,66 @@ def load_data_from_clusters(task, max_tasks_per_cluster=None, max_examples_per_t
                 data.append(dp)
     return data
 
+def load_anydata(args):
+    if len(args.task.split()) > 1:
+        task_strings = args.task.split()
+
+        if args.task_ratios:
+            task_ratios = [float(r) for r in args.task_ratios.split(',')]
+        else:
+            task_ratios = [1 / len(task_strings)] * len(task_strings) # Equal ratios for each task
+        assert np.isclose(np.sum(task_ratios), 1), f"Task ratios must sum to one! Currently {np.sum(task_ratios)}"
+        
+        train_data = []
+        for i, task_string in enumerate(task_strings):
+            # logger.info(task_string)
+            task_args_strings = task_string.split(';')
+            task_name = task_args_strings[0]
+            task_kwargs = {}
+
+            def try_convert_to_num(s):
+                if s.isnumeric():
+                    return int(s)
+                else:
+                    try:
+                        return float(s)
+                    except ValueError:
+                        return s
+
+            for kwarg_str in task_args_strings[1:]:
+                key, val = kwarg_str.split(':')
+                task_kwargs[key] = try_convert_to_num(val)
+
+            train_data_ = load_data(task_name, "train", args.k, seed=args.seed,
+                max_examples_per_task=args.max_examples_per_task,
+                shuffle_examples=args.shuffle,
+                shuffle_examples_seed=args.shuffle_examples_seed,
+                **task_kwargs
+                )
+            
+            # logger.info(f"Num examples in this set: {len(train_data_)}")
+            num_tasks_ = len(set([dp["task"] for dp in train_data_]))
+            # logger.info(f"Num tasks in this set: {num_tasks_}")
+
+            num_examples_from_this_set = int(args.target_num_examples * task_ratios[i])
+            # logger.info(f"num_examples_from_this_set {num_examples_from_this_set}")
+            train_data_ = random.sample(train_data_, num_examples_from_this_set)
+            train_data += train_data_
+            # logger.info("")
+
+    else:
+        train_data = load_data(args.task, "train", args.k, seed=args.seed,
+            max_examples_per_task=args.max_examples_per_task,
+            shuffle_examples=args.shuffle,
+            shuffle_examples_seed=args.shuffle_examples_seed,
+            is_cluster_dataset=args.is_cluster_dataset,
+            max_tasks_per_cluster=args.max_tasks_per_cluster,
+            cluster_idxs=args.cluster_idxs,
+            use_random_label=args.use_random_label,
+            predict_last_word=args.predict_last_word,
+            swap_input_output=args.swap_input_output,
+            )
+    return train_data
 
 def load_data(task, split, k, seed=0, config_split=None, datasets=None,
               is_null=False, max_examples_per_task=None, shuffle_examples=True, shuffle_examples_seed=0, 
