@@ -144,14 +144,18 @@ if __name__=='__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--tarfile", type=str, required=True)
+    parser.add_argument("--outdir", type=str, default=None)
     parser.add_argument("--max_source_files", type=int, default=None)
     parser.add_argument("--min_rows", type=int, default=6)
-    parser.add_argument("--max_tables_per_domain", type=int, default=20)
+    parser.add_argument("--max_tasks_per_domain", type=int, default=50)
     
     args = parser.parse_args()
     
     export_slice = Path(args.tarfile).stem
-    out_dir = Path(args.tarfile).parent / export_slice
+    if args.outdir:
+        out_dir = Path(args.outdir) / export_slice
+    else:
+        out_dir = Path(args.tarfile).parent / export_slice
     out_dir.mkdir(parents=True, exist_ok=False)
 
     index_file = out_dir / "index.txt" # Full list of all tasks for ease of human browsing (not consumed by downstream software)
@@ -163,9 +167,9 @@ if __name__=='__main__':
         "tables_initial",
         "tables_rejected_minrows",
         "tables_rejected_proseness",
-        "tables_rejected_maxdomain",
         "tables_remaining",
         "tasks_initial",
+        "tasks_rejected_maxdomain",
         "tasks_rejected_taskminrows",
         "tasks_rejected_onetomany",
         "tasks_rejected_minclasses",
@@ -206,16 +210,16 @@ if __name__=='__main__':
                 filter_stage_counts['tables_rejected_proseness'] += 1
                 continue
 
-            domain = get_payleveldomain(obj['url'])
-            domain_counts[domain] += 1
-            if domain_counts[domain] > args.max_tables_per_domain:
-                filter_stage_counts['tables_rejected_maxdomain'] += 1
-                continue
-            
             filter_stage_counts['tables_remaining'] += 1
 
             for output_col_name in df.columns: # Consider each column as a potential output column to create a new task
                 filter_stage_counts['tasks_initial'] += 1
+
+                domain = get_payleveldomain(obj['url'])
+                if domain_counts[domain] >= args.max_tasks_per_domain:
+                    filter_stage_counts['tasks_rejected_maxdomain'] += 1
+                    continue
+                
                 xy_pairs = make_taskpairs_from_table(df, output_col_name=output_col_name)
                 if len(xy_pairs) < args.min_rows:
                     filter_stage_counts['tasks_rejected_taskminrows'] += 1
@@ -241,8 +245,9 @@ if __name__=='__main__':
                 if class_balance_score < 0.7:
                     filter_stage_counts['tasks_rejected_classbalance'] += 1
                     continue
-                
+
                 filter_stage_counts['tasks_remaining'] += 1
+                domain_counts[domain] += 1
 
                 # By default, use all outputs in the column for multiple-choice options, unless there are too many or the labels are too long
                 # (if we don't provide options this will be treated as a generative task)
