@@ -28,8 +28,21 @@ parameters:
       # - artificialdatasets_word2sentence
       # - artificialdatasets_word2word
       # - wdc-v3-flashcards
+      # - |-
+      #   hr_to_lr_dev
+      #   wdc4-clusters500;is_cluster_dataset:1;cluster_idxs:249,272,17,139,306;max_tasks_per_cluster:50
+  # task_ratios:
+  #   values:
+  #     - 1.0,0.0
+  #     - 0.8,0.2
+  #     - 0.6,0.4
+  #     - 0.4,0.6
+  #     - 0.2,0.8
+  #     - 0.0,1.0
+  # target_num_examples:
+  #   values: [8000]
   wandb_tags:
-    values: ['best-in-sweep,wdc-v4-correlated-clusters']
+    values: ['best-in-sweep,use-demos']
   max_examples_per_task:
     values: [200]
   gradient_accumulation_steps:
@@ -56,6 +69,8 @@ parameters:
     values: ['all_tasks_test']
   max_examples_per_test:
     values: [100]
+  use_demonstrations:
+    values: [0, 1]
   # swap_input_output:
     # values: [0, 1]
   # predict_last_word:
@@ -66,28 +81,17 @@ parameters:
     values: [1]
   cluster_idxs:
     values:
-      # - '17,139,175,134,198'
-      # - '17,139,175,134,198,243,212,180,209,235'
-      # - '17,139,175,134,198,243,212,180,209,235,178,163,200,247,146,188,21,182,211,162'
-      # - '249,272,17,139,306'
-      # - '249,272,17,139,306,175,307,285,243,134'
-      # - '249,272,17,139,306,175,307,285,243,134,198,212,180,209,305,251,270,178,163,200'
-      - '307,285'
-      - '307,305'
-      - '307,251'
-      - '306,305'
-      - '139,305'
-      - '307,249'
-      - '285,306'
-      - '306,198'
-      - '139,180'
-      - '272,209'
+      - '249,272,17,139,306'
+  #     # - '249,272,17,139,306,175,307,285,243,134'
+  #     # - '249,272,17,139,306,175,307,285,243,134,198,212,180,209,305,251,270,178,163,200'
   max_tasks_per_cluster:
     values: [200]
   # gpt2:
   #   values: ["gpt2-xl"]
   # init_checkpoint:
-  #   values: ['checkpoints/metaicl/wdc-v2_cluster_t200/metaicl_m200-best_task_dev_score.pt']
+  #   values:
+  #     - /home/jc11431/git/MetaICL/checkpoints/metaicl/multistage-wdcv4-hrtolrdev/mix_stage_1/model18635380_1-best_dev_score.pt
+  #     - /home/jc11431/git/MetaICL/checkpoints/metaicl/multistage-wdcv4-hrtolrdev/mix_stage_1/model18635380_4-best_dev_score.pt
 command:
   - python
   - ${program}
