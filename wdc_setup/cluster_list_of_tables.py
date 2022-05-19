@@ -28,7 +28,8 @@ if __name__=='__main__':
     for jsonl_file in tqdm(jsonl_paths):
         with open(jsonl_file) as f:
             line = f.readline()
-            table_string = json.loads(line)['table_title']
+            obj = json.loads(line)
+            table_string = f"{obj['pageTitle']} {obj['title']} {obj['outputColName']} {obj['input']} {obj['output']}"
             table_strings.append(table_string)
 
     # Use Spacy to load Vectors

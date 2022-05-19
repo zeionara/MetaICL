@@ -4,7 +4,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=4
 #SBATCH --time=12:00:00
-#SBATCH --mem=32GB
+#SBATCH --mem=128GB
 
 #SBATCH --job-name=wdc-v5
 
@@ -25,15 +25,19 @@ myquota
 nvidia-smi
 which python
 
-SLICE=$1
+WDC_VERSION="v5"
 
-# cd $SCRATCH/MetaICL/data/wdc-v5
+# SLICE=$1
+
+# cd $SCRATCH/MetaICL/data/wdc-$WDC_VERSION
 # wget http://data.dws.informatik.uni-mannheim.de/webtables/2015-07/englishCorpus/compressed/$SLICE.tar.gz
 # tar -xvf $SLICE.tar.gz
 
-cd $USERDIR/git/MetaICL/wdc_setup
-python filter_slice_to_longlist.py --tarfile /scratch/jc11431/MetaICL/data/wdc-v5/$SLICE.tar # creates a file /scratch/jc11431/MetaICL/data/wdc-v5/$SLICE/longlist.jsonl
-# python export_tasks_from_tables.py --tarfile /scratch/jc11431/MetaICL/data/wdc-v5/$SLICE.tar --tables_file /scratch/jc11431/MetaICL/data/wdc-v5/$SLICE/longlist.jsonl # creates a directory of task files (.jsonl) /scratch/jc11431/MetaICL/data/wdc-v5/$SLICE/longlist
-echo "EXPORT COMPLETE. Exported to /scratch/jc11431/MetaICL/data/wdc-v5/$SLICE/longlist"
+# cd $USERDIR/git/MetaICL/wdc_setup
+# python filter_slice_to_longlist.py --tarfile /scratch/jc11431/MetaICL/data/wdc-tars/$SLICE.tar --outdir /scratch/jc11431/MetaICL/data/wdc-$WDC_VERSION/ --max_source_files 10000
+# echo "EXPORT COMPLETE. Exported to /scratch/jc11431/MetaICL/data/wdc-$WDC_VERSION/$SLICE/"
 
-# python cluster_list_of_tables.py --input_dir /scratch/jc11431/MetaICL/data/wdc-v5/export/ --num_clusters 500
+# python cluster_list_of_tables.py --input_dir /scratch/jc11431/MetaICL/data/wdc-$WDC_VERSION/ --num_clusters 50
+# python cluster_list_of_tables.py --input_dir /scratch/jc11431/MetaICL/data/wdc-$WDC_VERSION/ --num_clusters 200
+python cluster_list_of_tables.py --input_dir /scratch/jc11431/MetaICL/data/wdc-$WDC_VERSION/ --num_clusters 500
+python cluster_list_of_tables.py --input_dir /scratch/jc11431/MetaICL/data/wdc-$WDC_VERSION/ --num_clusters 2000
