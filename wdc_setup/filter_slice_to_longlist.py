@@ -45,6 +45,26 @@ is_valid_pos = {
     "SPACE": False,
 }
 
+potential_verbalizer_delimiters = [
+    ('[', '] ', ' '),
+    # ('[', '] ', '. '),
+    # ('[', '] ', ' || '),
+    # ('[', '] ', '\t'),
+    # ('[', '] ', '\n'),
+
+    # ('', ': ', ' '),
+    # ('', ': ', '. '),
+    # ('', ': ', ' || '),
+    # ('', ': ', '\t'),
+    # ('', ': ', '\n'),
+    
+    # ('|', '| ', ' '),
+    # ('|', '| ', '. '),
+    # ('|', '| ', ' || '),
+    # ('|', '| ', '\t'),
+    # ('|', '| ', '\n'),
+]
+
 def measure_proseness(text):
     if len(text) == 0:
         return 0
@@ -90,7 +110,10 @@ def is_mostly_valid_text(df, min_proseness):
     else:
         return False
 
-def make_taskpairs_from_table(df, output_col_name, max_label_len=30):
+def make_taskpairs_from_table(df, output_col_name, max_label_len=30, verbalizer_delimiters=('[', '] ', ' ')):
+    assert len(verbalizer_delimiters) == 3, f"Invalid verbalizer delimiters: {verbalizer_delimiters}"
+    label_left, label_right, sep = verbalizer_delimiters
+
     output_col_name = str(output_col_name)
     col_names = [str(el) for el in df.columns.to_list()]
     assert output_col_name in col_names, (col_names, output_col_name)
@@ -106,17 +129,17 @@ def make_taskpairs_from_table(df, output_col_name, max_label_len=30):
         assert output, output
         # Concatenate column names and cell values; 
         input_items = []
-        for col_name, value in zip(row.index, row):
+        for col_label, value in zip(row.index, row):
             if not value.strip(): # Skip empty input items 
                 continue
             # Skip labels that are too long (there may be mislabeled headers that are actually cell values)
-            if len(col_name) < max_label_len:
-                input_items.append(f"[{col_name}] {value}")
+            if len(col_label) < max_label_len:
+                input_items.append(f"{label_left}{col_label}{label_right}{value}{sep}")
             else:
-                input_items.append(f"{value}")
-        input = ' '.join(input_items)
+                input_items.append(f"{value}{sep}")
+        input = ''.join(input_items)
         if len(output_col_name) < max_label_len:
-            input += f" [{output_col_name}] "
+            input += f"{label_left}{output_col_name}{label_right}"
         task_pairs.append((input, output))
     return task_pairs
 
@@ -220,7 +243,8 @@ if __name__=='__main__':
                     filter_stage_counts['tasks_rejected_maxdomain'] += 1
                     continue
                 
-                xy_pairs = make_taskpairs_from_table(df, output_col_name=output_col_name)
+                verbalizer_delimiters = potential_verbalizer_delimiters[filter_stage_counts['tasks_remaining'] % len(potential_verbalizer_delimiters)]
+                xy_pairs = make_taskpairs_from_table(df, output_col_name=output_col_name, verbalizer_delimiters=verbalizer_delimiters)
                 if len(xy_pairs) < args.min_rows:
                     filter_stage_counts['tasks_rejected_taskminrows'] += 1
                     continue

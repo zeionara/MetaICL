@@ -165,6 +165,7 @@ if __name__=='__main__':
     parser.add_argument("--seed", type=int, default=100)
     parser.add_argument("--train_seed", type=int, default=1)
 
+    parser.add_argument("--max_tasks", type=int, default=None)
     parser.add_argument("--max_examples_per_task", type=int, default=None)
     parser.add_argument("--shuffle", type=int, default=1)
     parser.add_argument("--shuffle_examples_seed", type=int, default=0)

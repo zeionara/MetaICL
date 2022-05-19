@@ -101,6 +101,7 @@ def load_anydata(args):
 
     else:
         train_data = load_data(args.task, "train", args.k, seed=args.seed,
+            max_tasks=args.max_tasks,
             max_examples_per_task=args.max_examples_per_task,
             shuffle_examples=args.shuffle,
             shuffle_examples_seed=args.shuffle_examples_seed,
@@ -113,8 +114,8 @@ def load_anydata(args):
             )
     return train_data
 
-def load_data(task, split, k, seed=0, config_split=None, datasets=None,
-              is_null=False, max_examples_per_task=None, shuffle_examples=True, shuffle_examples_seed=0, 
+def load_data(task, split, k, seed=0, config_split=None, datasets=None, is_null=False, 
+              max_tasks=None, max_examples_per_task=None, shuffle_examples=True, shuffle_examples_seed=0, 
               is_cluster_dataset=0, max_tasks_per_cluster=None, cluster_idxs=None,
               use_random_label=False, predict_last_word=False, swap_input_output=False):
     if is_cluster_dataset:
@@ -140,10 +141,15 @@ def load_data(task, split, k, seed=0, config_split=None, datasets=None,
     datasets_expanded = []
     for dataset in datasets:
         if Path(dataset).is_dir():
-            for p in Path(dataset).glob("*.jsonl"):
+            for p in Path(dataset).glob("**/*.jsonl"):
                 datasets_expanded.append(str(p))
         else:
             datasets_expanded.append(dataset)
+    np.random.seed(shuffle_examples_seed)
+    if shuffle_examples:
+        np.random.shuffle(datasets_expanded)
+    if max_tasks:
+        datasets_expanded = datasets_expanded[:max_tasks]
 
     data = []
     for task_idx, dataset in enumerate(datasets_expanded):
