@@ -1,0 +1,2 @@
+1. Run `bash run_wdc_v5.sh` to download and extract all 51 slices via 51 parallel batch jobs. (Will generate almost 150GB and 500k files)
+2. After all 51 jobs are complete, run `sbatch run_wdc_v5_clustering.sbatch` to perform the clustering. (Will output 4 cluster.json files in the wdc-v5 data folder)
