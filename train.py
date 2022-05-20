@@ -212,7 +212,7 @@ if __name__=='__main__':
         args.train_algo = "metaicl" if args.use_demonstrations else "multitask-zero"
     if args.out_dir is None:
         args.train_algo = args.train_algo if args.method == "direct" else f"channel-{args.train_algo}"
-        args.out_dir = f"checkpoints/{args.train_algo}/{args.task}"
+        args.out_dir = f"checkpoints/{args.train_algo}/"
 
     handlers = [logging.StreamHandler()]
     if args.log_file is not None:
