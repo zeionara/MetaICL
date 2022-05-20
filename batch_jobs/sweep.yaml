@@ -31,8 +31,11 @@ parameters:
       # - |-
       #   hr_to_lr_dev
       #   wdc4-clusters500;is_cluster_dataset:1;cluster_idxs:249,272,17,139,306;max_tasks_per_cluster:50
-      - wdc-v5
-      - wdc-v5-all_delims
+      # - wdc-v4
+      # - wdc-v5
+      # - wdc-v5-all_delims
+      - wdc5-clusters50
+      - wdc5-clusters200
   # task_ratios:
   #   values:
   #     - 1.0,0.0
@@ -44,9 +47,9 @@ parameters:
   # target_num_examples:
   #   values: [8000]
   wandb_tags:
-    values: ['wdc5-all_delims']
-  max_tasks:
-    values: [1000]
+    values: ['wdc-v5_diverse-clusters']
+  # max_tasks:
+  #   values: [1000]
   max_examples_per_task:
     values: [200]
   gradient_accumulation_steps:
@@ -56,19 +59,19 @@ parameters:
   shuffle:
     values: [1]
   shuffle_examples_seed:
-    values: [0,1,2]
+    values: [0]
   label_smoothing:
     values: [0.0]
   debug_data_order:
     values: [0]
   num_training_steps:
-    values: [50000]
+    values: [100000]
   repeat_batch:
     values: [1]
   verbose_train:
     values: [0]
   log_period:
-    values: [2000]
+    values: [5000]
   test_tasks:
     values: ['all_tasks_test']
   max_examples_per_test:
@@ -81,15 +84,15 @@ parameters:
   #   values: [0, 1]
   # use_random_label:
   #   values: [0, 1]
-  # is_cluster_dataset:
-  #   values: [1]
+  is_cluster_dataset:
+    values: [1]
   # cluster_idxs:
   #   values:
   #     - '249,272,17,139,306'
-  #     # - '249,272,17,139,306,175,307,285,243,134'
-  #     # - '249,272,17,139,306,175,307,285,243,134,198,212,180,209,305,251,270,178,163,200'
-  # max_tasks_per_cluster:
-  #   values: [200]
+  #     - '249,272,17,139,306,175,307,285,243,134'
+  #     - '249,272,17,139,306,175,307,285,243,134,198,212,180,209,305,251,270,178,163,200'
+  max_tasks_per_cluster:
+    values: [20]
   # gpt2:
   #   values: ["gpt2-xl"]
   # init_checkpoint:
