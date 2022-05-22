@@ -3,11 +3,11 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=4
-#SBATCH --gres=gpu:rtx8000:1
-#SBATCH --time=48:00:00
-#SBATCH --mem=64GB
+#SBATCH --gres=gpu:a100:1
+#SBATCH --time=168:00:00
+#SBATCH --mem=128GB
 
-#SBATCH --array=1-15
+#SBATCH --array=1-4
 #SBATCH --job-name=sweep_job
 
 ## This places the standard output and standard error into the same file, in this case slurm_<job_id>_<arr_idx>.out 

@@ -22,7 +22,8 @@ from utils.utils import get_checkpoint_id, download_file
 
 class MetaICLModel(object):
 
-    def __init__(self, logger=None, out_dir=None, fp16=True, local_rank=-1, model_id="", task=None, debug_data_order=False, test_tasks=None, max_examples_per_test=None, use_demonstrations=True):
+    def __init__(self, logger=None, out_dir=None, fp16=True, local_rank=-1, model_id="", task=None, 
+        debug_data_order=False, test_tasks=None, max_examples_per_test=None, use_demonstrations=True, test_batch_size=64):
         if logger is None:
             class Logger():
                 def info(self, text):
@@ -39,6 +40,7 @@ class MetaICLModel(object):
         self.max_examples_per_test = max_examples_per_test
         self.debug_data_order = debug_data_order
         self.use_demonstrations = use_demonstrations
+        self.test_batch_size = test_batch_size
 
         if self.local_rank == -1:
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -243,7 +245,7 @@ class MetaICLModel(object):
         args.seed = '100,13,21,42,87'
         args.max_examples_per_task = self.max_examples_per_test
         args.use_demonstrations = self.use_demonstrations
-        args.test_batch_size = 16
+        args.test_batch_size = self.test_batch_size
         args.method = 'direct'
         args.checkpoint = f'{self.out_dir}/{self.model_id}-tmp.pt'
         args.out_dir = f'{self.out_dir}/{self.model_id}'
@@ -272,13 +274,14 @@ class MetaICLModel(object):
                     labels=vbatch[3].to(self.device)
 
                 val_loss = self.run_model(input_ids, attention_mask, token_type_ids, labels=labels)
-                val_losses.append(val_loss.item())
+                self.logger.info(f"val_loss.size(): {val_loss.size()}")
+                val_losses.extend(val_loss.flatten().tolist()) # Basically `val_losses.append(val_loss.item())`, but handles the batch_size>1 case where val_loss is not a single element
             val_loss = np.mean(val_losses)
             self.logger.info("val_loss %.2f" % (val_loss))
         self.model.train()
         return val_loss
 
-    def do_train(self, data, batch_size, num_training_steps, save_period, log_period,
+    def do_train(self, data, batch_size, num_training_steps, save_period=None, log_period=1000,
                  gradient_accumulation_steps=1, max_grad_norm=1.0, val_split=None, label_smoothing=0.0, verbose=False):
         if val_split is not None:
             dataloader, val_loader = data.get_dataloader(batch_size, is_training=True, val_split=val_split)
@@ -298,16 +301,20 @@ class MetaICLModel(object):
             n_trainable_params, len(data), num_training_steps, self.n_gpu))
 
         global_step = 0 if self.global_step is None else self.global_step
+        num_examples_seen = 0
         initial_step = global_step # Important for resuming from checkpoints
         stop_training=False
         train_losses = []
-        best_accuracy = -1
         val_loss = 0
         best_val_loss = np.inf
         best_dev_score = -np.inf
 
         while True: 
             for batch_idx, batch in enumerate(dataloader):
+                self.logger.info(f"batch[0].size: {batch[0].size()}")
+                self.logger.info(f"batch[1].size: {batch[1].size()}")
+                self.logger.info(f"batch[2].size: {batch[2].size()}")
+                this_batch_size = batch[0][0]
 
                 # Evaluate before we train on the batch
                 if global_step % log_period == 0:
@@ -357,14 +364,15 @@ class MetaICLModel(object):
                     self.logger.info("local rank %d\tglobal step %d\ttrain loss %.2f" % (self.local_rank, global_step, train_loss))
                     wandb.log({
                         "global_step": global_step,
+                        "num_examples_seen": num_examples_seen,
                         "epoch": global_step / float(len(dataloader)),
                         "train/loss": train_loss,
                         "val/loss": val_loss,
                         "dev": dev_results_dict,
                         "dev/score": dev_score,
                     })
-                # if global_step % save_period == 0:
-                #     self.save(global_step)
+                if save_period and global_step % save_period == 0:
+                    self.save(global_step)
 
                 # Backprop
                 if self.fp16:
@@ -381,6 +389,7 @@ class MetaICLModel(object):
                     self.model.zero_grad()
 
                 global_step += 1
+                num_examples_seen += this_batch_size
                 if global_step - initial_step > num_training_steps:
                     break
 
