@@ -32,8 +32,10 @@ parameters:
       #   hr_to_lr_dev
       #   wdc4-clusters500;is_cluster_dataset:1;cluster_idxs:249,272,17,139,306;max_tasks_per_cluster:50
       # - wdc-v4
-      - wdc-v5
+      # - wdc-v5
       # - wdc-v5-all_delims
+      # - wdc5-clusters5
+      - wdc5-clusters15
       # - wdc5-clusters50
       # - wdc5-clusters200
   # task_ratios:
@@ -47,9 +49,9 @@ parameters:
   # target_num_examples:
   #   values: [8000]
   wandb_tags:
-    values: ['wdc-v5_scaling']
-  max_tasks:
-    values: [200, 1000, 5000, 25000, 125000, 500000]
+    values: ['wdc-v5_all-clusters']
+  # max_tasks:
+  #   values: [1000]
   max_examples_per_task:
     values: [200]
   gradient_accumulation_steps:
@@ -65,13 +67,13 @@ parameters:
   debug_data_order:
     values: [0]
   num_training_steps:
-    values: [100000]
+    values: [51000]
   repeat_batch:
     values: [1]
   verbose_train:
     values: [0]
   log_period:
-    values: [5000]
+    values: [10000]
   test_tasks:
     values: ['all_tasks_cleandev']
   max_examples_per_test:
@@ -84,28 +86,30 @@ parameters:
   #   values: [0, 1]
   # use_random_label:
   #   values: [0, 1]
-  # is_cluster_dataset:
-  #   values: [1]
-  # cluster_idxs:
-  #   values:
+  is_cluster_dataset:
+    values: [1]
+  max_tasks_per_cluster:
+    values: [3000]
+  cluster_idxs:
+    values:
   #     # - '249,272,17,139,306'
   #     # - '249,272,17,139,306,175,307,285,243,134'
   #     # - '249,272,17,139,306,175,307,285,243,134,198,212,180,209,305,251,270,178,163,200'
-  #     - '0'
-  #     - '1'
-  #     - '2'
-  #     - '3'
-  #     - '4'
-  #     - '5'
-  #     - '6'
-  #     - '7'
-  #     - '8'
-  #     - '9'
-  #     - '10'
-  #     - '11'
-  #     - '12'
-  #     - '13'
-  #     - '14'
+      - '0'
+      - '1'
+      - '2'
+      - '3'
+      - '4'
+      - '5'
+      - '6'
+      - '7'
+      - '8'
+      - '9'
+      - '10'
+      - '11'
+      - '12'
+      - '13'
+      - '14'
   #     - '15'
   #     - '16'
   #     - '17'
@@ -141,8 +145,6 @@ parameters:
   #     - '47'
   #     - '48'
   #     - '49'
-  # max_tasks_per_cluster:
-  #   values: [1000]
   # gpt2:
   #   values: ["gpt2-xl"]
   # init_checkpoint:
