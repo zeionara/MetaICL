@@ -32,8 +32,8 @@ parameters:
       #   hr_to_lr_dev
       #   wdc4-clusters500;is_cluster_dataset:1;cluster_idxs:249,272,17,139,306;max_tasks_per_cluster:50
       # - wdc-v4
-      - wdc-v5
-      # - wdc-v5-divdom
+      # - wdc-v5
+      - wdc-v5-divdom
       # - wdc-v5-all_delims
       # - wdc5-clusters5
       # - wdc5-clusters15
@@ -50,21 +50,21 @@ parameters:
   # target_num_examples:
   #   values: [8000]
   wandb_tags:
-    values: ['wdc-v5_tune-bigdata-params']
+    values: ['wdc-v5-divdom']
   max_tasks:
-    values: [25000]
+    values: [1000, 50000]
   max_examples_per_task:
-    values: [20]
+    values: [200]
   batch_size:
-    values: [4]
+    values: [1]
   gradient_accumulation_steps:
-    values: [1, 8, 64]
+    values: [1]
   lr:
-    values: [5e-5, 5e-6, 5e-7]
+    values: [5e-6]
   shuffle:
     values: [1]
   shuffle_examples_seed:
-    values: [0]
+    values: [0,1,2]
   label_smoothing:
     values: [0.0]
   debug_data_order:
@@ -95,16 +95,16 @@ parameters:
   #   values: [0, 1]
   # use_random_label:
   #   values: [0, 1]
-  is_cluster_dataset:
-    values: [1]
-  max_tasks_per_cluster:
-    values: [20, 100, 500]
-  cluster_idxs:
-    values:
+  # is_cluster_dataset:
+  #   values: [1]
+  # max_tasks_per_cluster:
+  #   values: [20, 100, 500]
+  # cluster_idxs:
+  #   values:
   #     - '1' # wdc5-clusters5best1
   #     - '1,12,9' # wdc5-clusters15best3
   #     - '8,15,36,20,17,30,40,38,24,39' # wdc5-clusters50best10
-      - '8,15,36,20,17' # wdc5-clusters50best5
+  #     - '8,15,36,20,17' # wdc5-clusters50best5
   #     # - '249,272,17,139,306'
   #     # - '249,272,17,139,306,175,307,285,243,134'
   #     # - '249,272,17,139,306,175,307,285,243,134,198,212,180,209,305,251,270,178,163,200'
