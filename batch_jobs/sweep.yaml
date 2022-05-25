@@ -32,8 +32,8 @@ parameters:
       #   hr_to_lr_dev
       #   wdc4-clusters500;is_cluster_dataset:1;cluster_idxs:249,272,17,139,306;max_tasks_per_cluster:50
       # - wdc-v4
-      # - wdc-v5
-      - wdc-v5-divdom
+      - wdc-v5
+      # - wdc-v5-divdom
       # - wdc-v5-all_delims
       # - wdc5-clusters5
       # - wdc5-clusters15
@@ -50,21 +50,21 @@ parameters:
   # target_num_examples:
   #   values: [8000]
   wandb_tags:
-    values: ['wdc-v5_best-clusters']
+    values: ['wdc-v5_tune-bigdata-params']
   max_tasks:
-    values: [1000, 50000]
+    values: [25000]
   max_examples_per_task:
-    values: [200]
+    values: [20]
   batch_size:
-    values: [1]
+    values: [4]
   gradient_accumulation_steps:
-    values: [1]
+    values: [1, 8, 64]
   lr:
-    values: [5e-6]
+    values: [5e-5, 5e-6, 5e-7]
   shuffle:
     values: [1]
   shuffle_examples_seed:
-    values: [0,1,2]
+    values: [0]
   label_smoothing:
     values: [0.0]
   debug_data_order:
@@ -82,7 +82,7 @@ parameters:
   test_tasks:
     values: ['all_tasks_cleandev']
   test_batch_size:
-    values: [64]
+    values: [16]
   max_examples_per_test:
     values: [100]
   # keep_gpus_warm:
