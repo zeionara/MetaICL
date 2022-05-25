@@ -9,7 +9,7 @@ parameters:
       # - non_qa_to_qa
       # - hr_to_lr_noinst
       # - hr_to_lr
-      - hr_to_lr_dev
+      # - hr_to_lr_dev
       # - hr_to_lr_dev_mcq
       # - non_nli_to_nli
       # - non_paraphrase_to_paraphrase
@@ -49,13 +49,13 @@ parameters:
   # target_num_examples:
   #   values: [8000]
   wandb_tags:
-    values: ['wdc-v5_examples-per-task']
+    values: ['wdc-v5_scaling-big']
   max_tasks:
-    values: [1000]
+    values: [125000, 500000]
   max_examples_per_task:
-    values: [50, 10]
+    values: [20]
   batch_size:
-    values: [1]
+    values: [4]
   gradient_accumulation_steps:
     values: [1]
   lr:
@@ -63,17 +63,17 @@ parameters:
   shuffle:
     values: [1]
   shuffle_examples_seed:
-    values: [0,1,2]
+    values: [0]
   label_smoothing:
     values: [0.0]
   debug_data_order:
     values: [0]
   num_training_steps:
-    values: [100000]
+    values: [1000000]
   # save_period:
   #   values: [10000]
   log_period:
-    values: [5000]
+    values: [10000]
   repeat_batch:
     values: [1]
   verbose_train:
@@ -81,9 +81,11 @@ parameters:
   test_tasks:
     values: ['all_tasks_cleandev']
   test_batch_size:
-    values: [16]
+    values: [64]
   max_examples_per_test:
     values: [100]
+  keep_gpus_warm:
+    values: [1]
   # use_demonstrations:
   #   values: [0, 1]
   # swap_input_output:
