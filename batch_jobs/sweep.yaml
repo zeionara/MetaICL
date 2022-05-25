@@ -32,7 +32,8 @@ parameters:
       #   hr_to_lr_dev
       #   wdc4-clusters500;is_cluster_dataset:1;cluster_idxs:249,272,17,139,306;max_tasks_per_cluster:50
       # - wdc-v4
-      - wdc-v5
+      # - wdc-v5
+      - wdc-v5-divdom
       # - wdc-v5-all_delims
       # - wdc5-clusters5
       # - wdc5-clusters15
@@ -50,8 +51,8 @@ parameters:
   #   values: [8000]
   wandb_tags:
     values: ['wdc-v5_best-clusters']
-  # max_tasks:
-  #   values: [125000, 500000]
+  max_tasks:
+    values: [1000, 50000]
   max_examples_per_task:
     values: [200]
   batch_size:
@@ -63,7 +64,7 @@ parameters:
   shuffle:
     values: [1]
   shuffle_examples_seed:
-    values: [0]
+    values: [0,1,2]
   label_smoothing:
     values: [0.0]
   debug_data_order:
