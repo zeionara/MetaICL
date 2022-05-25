@@ -51,15 +51,15 @@ parameters:
   wandb_tags:
     values: ['wdc-v5_tune-bigdata-params']
   max_tasks:
-    values: [25000]
+    values: [125000, 500000]
   max_examples_per_task:
     values: [20]
   batch_size:
     values: [4]
   gradient_accumulation_steps:
-    values: [1, 8, 64]
+    values: [1]
   lr:
-    values: [5e-5, 5e-6, 5e-7]
+    values: [5e-6]
   shuffle:
     values: [1]
   shuffle_examples_seed:
@@ -69,7 +69,7 @@ parameters:
   debug_data_order:
     values: [0]
   num_training_steps:
-    values: [100000]
+    values: [1000000]
   log_period:
     values: [10000]
   # save_period:
