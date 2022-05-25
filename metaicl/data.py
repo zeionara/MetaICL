@@ -479,27 +479,35 @@ class MetaICLData(object):
         unique_task_names = list(dict.fromkeys([dp["task"] for dp in train_data])) # Equivalent to set(ls) but maintains order
         sharded_inputs = []
         self.logger.info("sharding inputs...")
-        if self.use_demonstrations or (len(unique_task_names)>200 and len(train_data)>=1638400):
+        if self.use_demonstrations: # or (len(unique_task_names)>200 and len(train_data)>=1638400):
             """
             Split data into `n_task` shards
             """
             print(f"Splitting data into `n_task` ({len(unique_task_names)}) shards")
-            tot = 0
-            for i, curr_train_task in enumerate(tqdm(unique_task_names)):
-                curr_train_data = [dp for dp in train_data if dp["task"]==curr_train_task]
-                tot += len(curr_train_data)
-                if self.use_demonstrations and len(unique_task_names)>200 and len(train_data)>=1638400:
-                    # data is too huge; sampling 10% of the data
-                    self.logger.info("Sampling training data from %d to %d", len(curr_train_data), len(curr_train_data)//10)
-                    indices = np.random.permutation(range(len(curr_train_data)))[:len(curr_train_data)//10]
-                    curr_train_data = [curr_train_data[i] for i in indices]
-                elif len(unique_task_names)>200 and len(train_data)>=1638400:
-                    # data is too huge; sampling 50% of the data
-                    self.logger.info("Sampling training data from %d to %d", len(curr_train_data), len(curr_train_data)//2)
-                    indices = np.random.permutation(range(len(curr_train_data)))[:len(curr_train_data)//2]
-                    curr_train_data = [curr_train_data[i] for i in indices]
-                sharded_inputs.append(curr_train_data)
-            assert len(train_data)==tot
+            # tot = 0
+            # for i, curr_train_task in enumerate(tqdm(unique_task_names)):
+            #     curr_train_data = [dp for dp in train_data if dp["task"]==curr_train_task]
+            #     tot += len(curr_train_data)
+            #     if self.use_demonstrations and len(unique_task_names)>200 and len(train_data)>=1638400:
+            #         # data is too huge; sampling 10% of the data
+            #         self.logger.info("Sampling training data from %d to %d", len(curr_train_data), len(curr_train_data)//10)
+            #         indices = np.random.permutation(range(len(curr_train_data)))[:len(curr_train_data)//10]
+            #         curr_train_data = [curr_train_data[i] for i in indices]
+            #     elif len(unique_task_names)>200 and len(train_data)>=1638400:
+            #         # data is too huge; sampling 50% of the data
+            #         self.logger.info("Sampling training data from %d to %d", len(curr_train_data), len(curr_train_data)//2)
+            #         indices = np.random.permutation(range(len(curr_train_data)))[:len(curr_train_data)//2]
+            #         curr_train_data = [curr_train_data[i] for i in indices]
+            #     sharded_inputs.append(curr_train_data)
+            dp_by_tasks = {}
+            for dp in train_data:
+                if dp["task"] in dp_by_tasks:
+                    dp_by_tasks[dp["task"]].append(dp)
+                else:
+                    dp_by_tasks[dp["task"]] = [dp]
+
+            sharded_inputs = [sublist for sublist in dp_by_tasks.values()]
+            assert len(train_data) == sum([len(dps) for dps in sharded_inputs])
             assert len(sharded_inputs) == len(unique_task_names)
         else:
             """
