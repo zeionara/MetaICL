@@ -25,6 +25,16 @@ from metaicl.data import MetaICLData
 from metaicl.model import MetaICLModel
 from utils.data import load_anydata
 
+def get_gpu_memory_info(label="GPU memory usage"):
+    free, total = torch.cuda.mem_get_info()
+    reserved = total - free
+    info = f"""{label}
+    total: {total:,}
+    reserved: {reserved:,}
+    free: {free:,}
+    """
+    return info
+
 def main(logger, args):
     if args.gpt2.startswith("gpt2"):
         tokenizer = GPT2Tokenizer.from_pretrained(args.gpt2)
@@ -38,6 +48,14 @@ def main(logger, args):
 
     logger.info("batch_size=%d\tmax_length=%d\tmax_length_per_example=%d" % (
         args.batch_size, max_length, args.max_length_per_example))
+    
+    if args.keep_gpus_warm:
+        logger.info(get_gpu_memory_info("GPU memory before allocation:"))
+        total_memory = torch.cuda.get_device_properties(0).total_memory
+        n_dummy_elements = int(total_memory * 0.5 / torch.rand(1).element_size())
+        device = torch.device("cuda")
+        dummy_arr = torch.rand(n_dummy_elements, device=device)
+        logger.info(get_gpu_memory_info("GPU memory after allocation:"))
 
     train_data = load_anydata(args)
     logger.info(f"Num examples in the final set: {len(train_data)}")
@@ -66,6 +84,14 @@ def main(logger, args):
                                shuffle=args.shuffle,
                                repeat_batch = args.repeat_batch)
     metaicl_data.tensorize_for_training(train_data, keyword=args.task, seed=args.seed)
+
+    if args.keep_gpus_warm:
+        logger.info(get_gpu_memory_info("GPU memory before freeing:"))
+        del dummy_arr
+        import gc
+        gc.collect()
+        torch.cuda.empty_cache()
+        logger.info(get_gpu_memory_info("GPU memory after freeing:"))
 
     # # TODO: This is terrible; either unify the functions or split them into entirely separate things!
     # ######### load tensorize data without do_tensorize
@@ -206,6 +232,7 @@ if __name__=='__main__':
 
     parser.add_argument("--target_num_examples", type=int, default=8000)
     parser.add_argument("--task_ratios", type=str, default=None)
+    parser.add_argument("--keep_gpus_warm", type=int, default=0)
 
     args = parser.parse_args()
 
