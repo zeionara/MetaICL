@@ -49,17 +49,17 @@ parameters:
   # target_num_examples:
   #   values: [8000]
   wandb_tags:
-    values: ['wdc-v5_scaling-big']
+    values: ['wdc-v5_tune-bigdata-params']
   max_tasks:
-    values: [125000, 500000]
+    values: [25000]
   max_examples_per_task:
     values: [20]
   batch_size:
     values: [4]
   gradient_accumulation_steps:
-    values: [1]
+    values: [1, 8, 64]
   lr:
-    values: [5e-6]
+    values: [5e-5, 5e-6, 5e-7]
   shuffle:
     values: [1]
   shuffle_examples_seed:
@@ -69,11 +69,11 @@ parameters:
   debug_data_order:
     values: [0]
   num_training_steps:
-    values: [1000000]
-  # save_period:
-  #   values: [10000]
+    values: [100000]
   log_period:
     values: [10000]
+  # save_period:
+  #   values: [10000]
   repeat_batch:
     values: [1]
   verbose_train:
