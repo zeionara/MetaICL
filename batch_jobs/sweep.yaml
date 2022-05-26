@@ -50,21 +50,21 @@ parameters:
   # target_num_examples:
   #   values: [8000]
   wandb_tags:
-    values: ['wdc-v5_initial-test-all']
+    values: ['wdc-v5_scaling-everything']
   max_tasks:
-    values: [200]
+    values: [10, 30, 100, 500, 2500]
   max_examples_per_task:
     values: [50]
   batch_size:
     values: [1]
   gradient_accumulation_steps:
-    values: [1]
+    values: [1,4]
   lr:
     values: [5e-6]
   shuffle:
     values: [1]
   shuffle_examples_seed:
-    values: [0,1,2]
+    values: [0]
   label_smoothing:
     values: [0.0]
   debug_data_order:
@@ -82,7 +82,7 @@ parameters:
   verbose_train:
     values: [0]
   test_tasks:
-    values: ['all_tasks_test']
+    values: ['all_tasks_cleandev']
   test_batch_size:
     values: [16]
   max_examples_per_test:
