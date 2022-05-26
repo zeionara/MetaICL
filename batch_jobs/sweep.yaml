@@ -52,13 +52,13 @@ parameters:
   wandb_tags:
     values: ['wdc-v5_scaling-everything']
   max_tasks:
-    values: [10, 30, 100, 500, 2500]
+    values: [10000, 30000, 100000, 200000]
   max_examples_per_task:
     values: [50]
   batch_size:
-    values: [1]
+    values: [4]
   gradient_accumulation_steps:
-    values: [1,4]
+    values: [1]
   lr:
     values: [5e-6]
   shuffle:
