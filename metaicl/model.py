@@ -274,14 +274,13 @@ class MetaICLModel(object):
                     labels=vbatch[3].to(self.device)
 
                 val_loss = self.run_model(input_ids, attention_mask, token_type_ids, labels=labels)
-                self.logger.info(f"val_loss.size(): {val_loss.size()}")
                 val_losses.extend(val_loss.flatten().tolist()) # Basically `val_losses.append(val_loss.item())`, but handles the batch_size>1 case where val_loss is not a single element
             val_loss = np.mean(val_losses)
             self.logger.info("val_loss %.2f" % (val_loss))
         self.model.train()
         return val_loss
 
-    def do_train(self, data, batch_size, num_training_steps, save_period=None, log_period=1000,
+    def do_train(self, data, batch_size, num_training_steps, save_period=None, log_period=1000, log_period_epochs=None,
                  gradient_accumulation_steps=1, max_grad_norm=1.0, val_split=None, label_smoothing=0.0, verbose=False):
         if val_split is not None:
             dataloader, val_loader = data.get_dataloader(batch_size, is_training=True, val_split=val_split)
@@ -301,6 +300,8 @@ class MetaICLModel(object):
             n_trainable_params, len(data), num_training_steps, self.n_gpu))
 
         global_step = 0 if self.global_step is None else self.global_step
+        if log_period_epochs:
+            log_period = int(log_period_epochs * len(dataloader))
         num_examples_seen = 0
         initial_step = global_step # Important for resuming from checkpoints
         stop_training=False
@@ -311,9 +312,6 @@ class MetaICLModel(object):
 
         while True: 
             for batch_idx, batch in enumerate(dataloader):
-                self.logger.info(f"batch[0].size: {batch[0].size()}")
-                self.logger.info(f"batch[1].size: {batch[1].size()}")
-                self.logger.info(f"batch[2].size: {batch[2].size()}")
                 this_batch_size = batch[0][0]
 
                 # Evaluate before we train on the batch

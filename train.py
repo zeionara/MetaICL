@@ -158,6 +158,7 @@ def main(logger, args):
         args.num_training_steps,
         save_period = args.save_period,
         log_period = args.log_period,
+        log_period_epochs = args.log_period_epochs,
         gradient_accumulation_steps = args.gradient_accumulation_steps,
         max_grad_norm = args.max_grad_norm, 
         val_split = args.validation_split,
@@ -182,7 +183,8 @@ if __name__=='__main__':
     parser.add_argument("--num_training_steps", type=int, default=1000000)
     parser.add_argument("--validation_split", type=float, default=0.001)
     parser.add_argument("--save_period", type=int, default=None)
-    parser.add_argument("--log_period", type=int, default=2000)
+    parser.add_argument("--log_period", type=int, default=None)
+    parser.add_argument("--log_period_epochs", type=int, default=None)
 
     parser.add_argument("--train_algo", type=str, default=None)
     parser.add_argument("--task", type=str, default="SST-2")
@@ -241,6 +243,11 @@ if __name__=='__main__':
     if args.out_dir is None:
         args.train_algo = args.train_algo if args.method == "direct" else f"channel-{args.train_algo}"
         args.out_dir = f"checkpoints/{args.train_algo}/"
+    
+    if not (bool(args.log_period) ^ bool(args.log_period_epochs)): # NOT XOR
+        # Only allow log_period XOR log_period_epochs
+        print("Invalid arguments: log_period:{args.log_period}, log_period_epochs:{args.log_period_epochs}.\nApplying log_period_epochs=1.")
+        args.log_period_epochs = 1
 
     handlers = [logging.StreamHandler()]
     if args.log_file is not None:
