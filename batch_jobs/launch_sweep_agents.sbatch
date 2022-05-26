@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --gres=gpu:rtx8000:1
 #SBATCH --time=48:00:00
-#SBATCH --mem=128GB
+#SBATCH --mem=32GB
 
 #SBATCH --array=1-6
 #SBATCH --job-name=sweep_job
