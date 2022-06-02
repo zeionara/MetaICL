@@ -32,13 +32,13 @@ parameters:
       #   hr_to_lr_dev
       #   wdc4-clusters500;is_cluster_dataset:1;cluster_idxs:249,272,17,139,306;max_tasks_per_cluster:50
       # - wdc-v4
-      # - wdc-v5
-      # - wdc-v5-divdom
+      - wdc-v5
+      - wdc-v5-divdom
       # - wdc-v5-all_delims
       # - wdc5-clusters5
       # - wdc5-clusters15
       # - wdc5-clusters50
-      - wdc5-clusters200
+      # - wdc5-clusters200
   # task_ratios:
   #   values:
   #     - 1.0,0.0
@@ -50,31 +50,31 @@ parameters:
   # target_num_examples:
   #   values: [8000]
   wandb_tags:
-    values: ['wdc-v5_best-clusters200']
-  # max_tasks:
-  #   values: [10000, 30000, 100000, 200000]
+    values: ['wdc-v5_divdom']
+  max_tasks:
+    values: [40, 200, 1000, 5000]
   max_examples_per_task:
-    values: [50]
+    values: [10]
   batch_size:
     values: [1]
   gradient_accumulation_steps:
-    values: [1]
+    values: [8]
   lr:
     values: [5e-6]
   shuffle:
     values: [1]
   shuffle_examples_seed:
-    values: [0,1]
+    values: [0,1,2]
   label_smoothing:
     values: [0.0]
   debug_data_order:
     values: [0]
   num_training_steps:
     values: [1000000]
-  log_period:
-    values: [10000]
-  # log_period_epochs:
-  #   values: [1]
+  # log_period:
+  #   values: [10000]
+  log_period_epochs:
+    values: [1]
   # save_period:
   #   values: [10000]
   repeat_batch:
@@ -82,13 +82,13 @@ parameters:
   verbose_train:
     values: [0]
   test_tasks:
-    values: ['all_tasks_cleandev']
+    values: ['all_tasks_test']
   test_batch_size:
     values: [16]
   max_examples_per_test:
     values: [100]
-  # keep_gpus_warm:
-  #   values: [1]
+  keep_gpus_warm:
+    values: [1]
   # use_demonstrations:
   #   values: [0, 1]
   # swap_input_output:
@@ -97,15 +97,15 @@ parameters:
   #   values: [0, 1]
   # use_random_label:
   #   values: [0, 1]
-  is_cluster_dataset:
-    values: [1]
-  max_tasks_per_cluster:
-    values: [20, 100, 500]
-  cluster_idxs:
-    values:
-      - '39,117,115,37,174'
-      - '39,117,115,37,174,94,57,143,64,150'
-      - '39,117,115,37,174,94,57,143,64,150,100,158,128,109,107,91,49,187,79,66'
+  # is_cluster_dataset:
+  #   values: [1]
+  # max_tasks_per_cluster:
+  #   values: [20, 100, 500]
+  # cluster_idxs:
+  #   values:
+  #     - '39,117,115,37,174'
+  #     - '39,117,115,37,174,94,57,143,64,150'
+  #     - '39,117,115,37,174,94,57,143,64,150,100,158,128,109,107,91,49,187,79,66'
   #     - '1' # wdc5-clusters5best1
   #     - '1,12,9' # wdc5-clusters15best3
   #     - '8,15,36,20,17,30,40,38,24,39' # wdc5-clusters50best10
