@@ -32,14 +32,34 @@ parameters:
       #   hr_to_lr_dev
       #   wdc4-clusters500;is_cluster_dataset:1;cluster_idxs:249,272,17,139,306;max_tasks_per_cluster:50
       # - wdc-v4
-      - wdc-v5
-      - wdc-v5-divdom
+      # - wdc-v5
+      # - wdc-v5-divdom
       # - wdc-v5-all_delims
       # - wdc5-clusters5
       # - wdc5-clusters15
       # - wdc5-clusters50
       # - wdc5-clusters200
       # - all_tasks
+      - singlesite_baseball.fantasysports.yahoo.com
+      - singlesite_bulbapedia.bulbagarden.net
+      - singlesite_cappex.com
+      - singlesite_cram.com
+      - singlesite_dividend.com
+      - singlesite_dummies.com
+      - singlesite_en.wikipedia.org
+      - singlesite_ensembl.org
+      - singlesite_gamefaqs.com
+      - singlesite_mgoblog.com
+      - singlesite_mmo-champion.com
+      - singlesite_msdn.microsoft.com
+      - singlesite_phonearena.com
+      - singlesite_sittercity.com
+      - singlesite_sporcle.com
+      - singlesite_studystack.com
+      - singlesite_support.google.com
+      - singlesite_w3.org
+      - singlesite_wiki.openmoko.org
+      - singlesite_wkdu.org
   # task_ratios:
   #   values:
   #     - 1.0,0.0
@@ -51,9 +71,9 @@ parameters:
   # target_num_examples:
   #   values: [8000]
   wandb_tags:
-    values: ['endgame-scaling-tables']
+    values: ['endgame-single-websites']
   max_tasks:
-    values: [40, 200, 1000]
+    values: [1000]
   max_examples_per_task:
     values: [10]
   batch_size:
