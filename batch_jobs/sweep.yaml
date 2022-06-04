@@ -32,7 +32,7 @@ parameters:
       #   hr_to_lr_dev
       #   wdc4-clusters500;is_cluster_dataset:1;cluster_idxs:249,272,17,139,306;max_tasks_per_cluster:50
       # - wdc-v4
-      - wdc-v5
+      # - wdc-v5
       # - wdc-v5-divdom
       # - wdc-v5-all_delims
       # - wdc5-clusters5
@@ -60,6 +60,26 @@ parameters:
       # - singlesite_w3.org
       # - singlesite_wiki.openmoko.org
       # - singlesite_wkdu.org
+      - singlenlp_art
+      - singlenlp_boolq
+      - singlenlp_discovery
+      - singlenlp_emotion
+      - singlenlp_freebase_qa
+      - singlenlp_gigaword
+      - singlenlp_glue-sst2
+      - singlenlp_lama-trex
+      - singlenlp_numer_sense
+      - singlenlp_piqa
+      - singlenlp_race-middle
+      - singlenlp_social_i_qa
+      - singlenlp_spider
+      - singlenlp_squad-with_context
+      - singlenlp_tweet_eval-offensive
+      - singlenlp_tweet_eval-sentiment
+      - singlenlp_trec
+      - singlenlp_unifiedqa:winogrande_xl
+      - singlenlp_yahoo_answers_topics
+      - singlenlp_yelp_review_full
   # task_ratios:
   #   values:
   #     - 1.0,0.0
@@ -71,21 +91,21 @@ parameters:
   # target_num_examples:
   #   values: [8000]
   wandb_tags:
-    values: ['wdc-v5_tune-bigdata-params_pt2']
+    values: ['endgame-single-nlp-datasets']
   max_tasks:
-    values: [5000]
+    values: [1]
   max_examples_per_task:
-    values: [10]
+    values: [10000]
   batch_size:
     values: [1]
   gradient_accumulation_steps:
-    values: [8]
+    values: [1]
   lr:
-    values: [2e-5, 1e-5, 5e-6, 2e-6, 1e-6]
+    values: [5e-6]
   shuffle:
     values: [1]
   shuffle_examples_seed:
-    values: [0,1]
+    values: [0,1,2]
   label_smoothing:
     values: [0.0]
   debug_data_order:
