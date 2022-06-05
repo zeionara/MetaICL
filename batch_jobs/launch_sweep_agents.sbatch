@@ -6,7 +6,7 @@
 #SBATCH --gres=gpu:a100:1
 #SBATCH --time=168:00:00
 #SBATCH --mem=128GB
-#SBATCH --array=1-3
+#SBATCH --array=1-4
 #SBATCH --job-name=sweep_job
 
 ## This places the standard output and standard error into the same file, in this case slurm_<job_id>_<arr_idx>.out 

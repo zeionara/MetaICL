@@ -33,7 +33,7 @@ parameters:
       #   wdc4-clusters500;is_cluster_dataset:1;cluster_idxs:249,272,17,139,306;max_tasks_per_cluster:50
       # - wdc-v4
       - wdc-v5
-      # - wdc-v5-divdom
+      - wdc-v5-divdom
       # - wdc-v5-all_delims
       # - wdc5-clusters5
       # - wdc5-clusters15
@@ -93,7 +93,7 @@ parameters:
   wandb_tags:
     values: ['endgame-scaling-tables']
   max_tasks:
-    values: [125000]
+    values: [25000]
   max_examples_per_task:
     values: [10]
   batch_size:
@@ -105,7 +105,7 @@ parameters:
   shuffle:
     values: [1]
   shuffle_examples_seed:
-    values: [0,1,2]
+    values: [0,1]
   label_smoothing:
     values: [0.0]
   debug_data_order:
