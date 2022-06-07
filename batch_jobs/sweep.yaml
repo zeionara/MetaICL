@@ -32,14 +32,14 @@ parameters:
       #   hr_to_lr_dev
       #   wdc4-clusters500;is_cluster_dataset:1;cluster_idxs:249,272,17,139,306;max_tasks_per_cluster:50
       # - wdc-v4
-      # - wdc-v5
-      # - wdc-v5-divdom
+      - wdc-v5
+      - wdc-v5-divdom
       # - wdc-v5-all_delims
       # - wdc5-clusters5
       # - wdc5-clusters15
       # - wdc5-clusters50
       # - wdc5-clusters200
-      - all_tasks
+      # - all_tasks
       # - singlesite_baseball.fantasysports.yahoo.com
       # - singlesite_bulbapedia.bulbagarden.net
       # - singlesite_cappex.com
@@ -91,17 +91,17 @@ parameters:
   # target_num_examples:
   #   values: [8000]
   wandb_tags:
-    values: ['endgame-scaling-nlp']
+    values: ['endgame-scaling-tables']
   max_tasks:
-    values: [40]
+    values: [5000]
   max_examples_per_task:
-    values: [6250]
+    values: [10]
   batch_size:
-    values: [4]
+    values: [1]
   gradient_accumulation_steps:
-    values: [2]
+    values: [1]
   lr:
-    values: [1e-6]
+    values: [5e-6]
   shuffle:
     values: [1]
   shuffle_examples_seed:
