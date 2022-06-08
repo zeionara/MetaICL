@@ -32,8 +32,8 @@ parameters:
       #   hr_to_lr_dev
       #   wdc4-clusters500;is_cluster_dataset:1;cluster_idxs:249,272,17,139,306;max_tasks_per_cluster:50
       # - wdc-v4
-      - wdc-v5
-      - wdc-v5-divdom
+      # - wdc-v5
+      # - wdc-v5-divdom
       # - wdc-v5-all_delims
       # - wdc5-clusters5
       # - wdc5-clusters15
@@ -80,6 +80,7 @@ parameters:
       # - singlenlp_unifiedqa:winogrande_xl
       # - singlenlp_yahoo_answers_topics
       # - singlenlp_yelp_review_full
+      - wdc-v5_divdom_clusters
   # task_ratios:
   #   values:
   #     - 1.0,0.0
@@ -91,9 +92,9 @@ parameters:
   # target_num_examples:
   #   values: [8000]
   wandb_tags:
-    values: ['endgame-scaling-tables']
+    values: ['endgame-clusters']
   max_tasks:
-    values: [5000]
+    values: [10000]
   max_examples_per_task:
     values: [10]
   batch_size:
@@ -138,12 +139,12 @@ parameters:
   #   values: [0, 1]
   # use_random_label:
   #   values: [0, 1]
-  # is_cluster_dataset:
-  #   values: [1]
+  is_cluster_dataset:
+    values: [1]
   # max_tasks_per_cluster:
   #   values: [20, 100, 500]
-  # cluster_idxs:
-  #   values:
+  cluster_idxs:
+    values:
   #     - '39,117,115,37,174'
   #     - '39,117,115,37,174,94,57,143,64,150'
   #     - '39,117,115,37,174,94,57,143,64,150,100,158,128,109,107,91,49,187,79,66'
@@ -154,36 +155,37 @@ parameters:
   #     - '249,272,17,139,306'
   #     - '249,272,17,139,306,175,307,285,243,134'
   #     - '249,272,17,139,306,175,307,285,243,134,198,212,180,209,305,251,270,178,163,200'
-  #     - '0'
-  #     - '1'
-  #     - '2'
-  #     - '3'
-  #     - '4'
-  #     - '5'
-  #     - '6'
-  #     - '7'
-  #     - '8'
-  #     - '9'
-  #     - '10'
-  #     - '11'
-  #     - '12'
-  #     - '13'
-  #     - '14'
-  #     - '15'
-  #     - '16'
-  #     - '17'
-  #     - '18'
-  #     - '19'
-  #     - '20'
-  #     - '21'
-  #     - '22'
-  #     - '23'
-  #     - '24'
-  #     - '25'
-  #     - '26'
-  #     - '27'
-  #     - '28'
-  #     - '29'
+      - '-1'
+      - '0'
+      - '1'
+      - '2'
+      - '3'
+      - '4'
+      - '5'
+      - '6'
+      - '7'
+      - '8'
+      - '9'
+      - '10'
+      - '11'
+      - '12'
+      - '13'
+      - '14'
+      - '15'
+      - '16'
+      - '17'
+      - '18'
+      - '19'
+      - '20'
+      - '21'
+      - '22'
+      - '23'
+      - '24'
+      - '25'
+      - '26'
+      - '27'
+      - '28'
+      - '29'
   #     - '30'
   #     - '31'
   #     - '32'
