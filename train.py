@@ -145,7 +145,7 @@ def main(logger, args):
         logger, args.out_dir, args.fp16, args.local_rank,
         model_id=slurm_job_id, task=args.task, debug_data_order=args.debug_data_order,
         test_tasks=args.test_tasks, max_examples_per_test=args.max_examples_per_test,
-        use_demonstrations=args.use_demonstrations, test_batch_size=args.test_batch_size)
+        use_demonstrations=args.use_demonstrations, test_batch_size=args.test_batch_size, method=args.method)
     metaicl_model.load(args.init_checkpoint, args.gpt2)
     metaicl_model.to_device()
     metaicl_model.setup_optimizer(args.optimization, args.num_training_steps, args.lr,

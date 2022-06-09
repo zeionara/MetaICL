@@ -23,7 +23,7 @@ from utils.utils import get_checkpoint_id, download_file
 class MetaICLModel(object):
 
     def __init__(self, logger=None, out_dir=None, fp16=True, local_rank=-1, model_id="", task=None, 
-        debug_data_order=False, test_tasks=None, max_examples_per_test=None, use_demonstrations=True, test_batch_size=64):
+        debug_data_order=False, test_tasks=None, max_examples_per_test=None, use_demonstrations=True, test_batch_size=64, method='direct'):
         if logger is None:
             class Logger():
                 def info(self, text):
@@ -41,6 +41,7 @@ class MetaICLModel(object):
         self.debug_data_order = debug_data_order
         self.use_demonstrations = use_demonstrations
         self.test_batch_size = test_batch_size
+        self.method = method
 
         if self.local_rank == -1:
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -246,7 +247,7 @@ class MetaICLModel(object):
         args.max_examples_per_task = self.max_examples_per_test
         args.use_demonstrations = self.use_demonstrations
         args.test_batch_size = self.test_batch_size
-        args.method = 'direct'
+        args.method = self.method
         args.checkpoint = f'{self.out_dir}/{self.model_id}-tmp.pt'
         args.out_dir = f'{self.out_dir}/{self.model_id}'
         print(args)
