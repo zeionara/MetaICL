@@ -32,7 +32,7 @@ parameters:
       #   hr_to_lr_dev
       #   wdc4-clusters500;is_cluster_dataset:1;cluster_idxs:249,272,17,139,306;max_tasks_per_cluster:50
       # - wdc-v4
-      - wdc-v5
+      # - wdc-v5
       # - wdc-v5-divdom
       # - wdc-v5-all_delims
       # - wdc5-clusters5
@@ -81,6 +81,9 @@ parameters:
       # - singlenlp_yahoo_answers_topics
       # - singlenlp_yelp_review_full
       # - wdc-v5_divdom_clusters
+      - human_selected_class0
+      - human_selected_class1
+      - human_selected_class2
   # task_ratios:
   #   values:
   #     - 1.0,0.0
@@ -92,9 +95,9 @@ parameters:
   # target_num_examples:
   #   values: [8000]
   wandb_tags:
-    values: ['channel-metaicl']
+    values: ['endgame-human']
   max_tasks:
-    values: [200,1000,5000]
+    values: [200]
   max_examples_per_task:
     values: [10]
   batch_size:
@@ -133,8 +136,8 @@ parameters:
     values: [1]
   method:
     values:
-      # - 'direct'
-      - 'channel'
+      - 'direct'
+      # - 'channel'
   # use_demonstrations:
   #   values: [0, 1]
   # swap_input_output:
