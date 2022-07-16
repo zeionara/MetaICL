@@ -9,15 +9,26 @@ task=$1
 method=$2
 seed=$3
 bs=$4
-if [[ $method == *"metaicl" || $method == *"multitask-zero" ]] ; then
-    checkpoint="checkpoints/${method}/${task}/model.pt"
-    out_dir="checkpoints/${method}/${task}"
-    if [[ ! -f $checkpoint ]] ; then
-        python -m utils.download --checkpoints --setting $task --method $method
-    fi
-else
-    out_dir="checkpoints/lm"
+model=$5
+# Default model if model argument not provided
+if [ -z "$model" ]; then
+    model="model.pt"
 fi
+if [ -f $model ] ; then # Just use the absolute path
+    checkpoint="${model}"
+    out_dir="checkpoints/${method}/${task}"
+else
+    if [[ $method == *"metaicl" || $method == *"multitask-zero" ]] ; then
+        checkpoint="checkpoints/${method}/${task}/${model}"
+        out_dir="checkpoints/${method}/${task}"
+        if [[ ! -f $checkpoint ]] ; then
+            python -m utils.download --checkpoints --setting $task --method $method
+        fi
+    else
+        out_dir="checkpoints/lm"
+    fi
+fi
+echo "Using model from checkpoint: $checkpoint"
 if [[ $method == "metaicl" ]] ; then
     python test.py --task $task --k 16 --split test --seed $seed --use_demonstrations \
     --test_batch_size $bs --method direct --checkpoint $checkpoint --out_dir $out_dir
