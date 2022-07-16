@@ -68,9 +68,9 @@ def inspect_dataset(list_of_paths, num_peek=10, write_samples_to=None, verbose=F
                         print(f"output: {obj['output']}", file=f_out)
                         text = extract_input_output(line)
                         pos_dict = get_parts_of_speech_bag(text)
-                        print(pos_dict, file=f_out)
+                        # print(pos_dict, file=f_out)
                     mean_pos_types = np.mean([len(get_parts_of_speech_bag(extract_input_output(text))) for text in lines[:5]])
-                    print("\nmean_pos_types", mean_pos_types, file=f_out)
+                    # print("\nmean_pos_types", mean_pos_types, file=f_out)
                 print("\n\n==================\n\n", file=f_out)
         print("Wrote examples printout to", write_samples_to)
 
@@ -131,13 +131,24 @@ if __name__=='__main__':
         # Point directly to the jsonl files
         num_examples = 50
         train_files = []
-        for idx, train_item in enumerate(cfg['train']):
 
+        datasets = cfg['train']
+
+        # Support paths to directories containing jsonl files
+        datasets_expanded = []
+        for dataset in datasets:
+            if Path(dataset).is_dir():
+                for p in Path(dataset).glob("*.jsonl"):
+                    datasets_expanded.append(str(p))
+            else:
+                datasets_expanded.append(dataset)
+        
+        for idx, train_item in enumerate(datasets_expanded):
             if not train_item.endswith('.jsonl'):
                 train_item = Path("data") / train_item / f"{train_item}_16384_100_train.jsonl"
             train_files.append(train_item)
             
-        print("Filtering")
-        train_files = filter_paths(train_files)
+        # print("Filtering")
+        # train_files = filter_paths(train_files)
         print("Inspecting")
         inspect_dataset(train_files, num_peek=100, write_samples_to=args.write_samples_to, verbose=args.verbose)

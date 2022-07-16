@@ -4,7 +4,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=4
 #SBATCH --time=48:00:00
-#SBATCH --mem=128GB
+#SBATCH --mem=256GB
 
 #SBATCH --job-name=wdc-v5
 
@@ -27,7 +27,9 @@ which python
 
 WDC_VERSION="v5"
 
-python cluster_list_of_tables.py --input_dir /scratch/jc11431/MetaICL/data/wdc-$WDC_VERSION/ --num_clusters 50
-python cluster_list_of_tables.py --input_dir /scratch/jc11431/MetaICL/data/wdc-$WDC_VERSION/ --num_clusters 200
-python cluster_list_of_tables.py --input_dir /scratch/jc11431/MetaICL/data/wdc-$WDC_VERSION/ --num_clusters 500
-python cluster_list_of_tables.py --input_dir /scratch/jc11431/MetaICL/data/wdc-$WDC_VERSION/ --num_clusters 2000
+# python cluster_list_of_tables.py --input_dir /scratch/jc11431/MetaICL/data/wdc-$WDC_VERSION/ --num_clusters 5
+# python cluster_list_of_tables.py --input_dir /scratch/jc11431/MetaICL/data/wdc-$WDC_VERSION/ --num_clusters 15
+# python cluster_list_of_tables.py --input_dir /scratch/jc11431/MetaICL/data/wdc-$WDC_VERSION/ --num_clusters 50
+# python cluster_list_of_tables.py --input_dir /scratch/jc11431/MetaICL/data/wdc-$WDC_VERSION/ --num_clusters 200
+# python cluster_list_of_tables.py --input_dir /scratch/jc11431/MetaICL/data/wdc-$WDC_VERSION/ --num_clusters 500
+# python cluster_list_of_tables.py --input_dir /scratch/jc11431/MetaICL/data/wdc-$WDC_VERSION/ --num_clusters 2000

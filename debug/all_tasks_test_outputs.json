@@ -1,0 +1,996 @@
+{
+    "ade_corpus_v2-classification": {
+        "options": [
+            "Not Related",
+            "Related"
+        ]
+    },
+    "ag_news": {
+        "options": [
+            "Business",
+            "Sci/Tech",
+            "Sports",
+            "World"
+        ]
+    },
+    "ai2_arc": {
+        "options": [
+            "Put the objects in groups.",
+            "Change the height of the ramp.",
+            "Choose different objects to roll.",
+            "Record the details of the investigation."
+        ]
+    },
+    "amazon_polarity": {
+        "options": [
+            "negative",
+            "positive"
+        ]
+    },
+    "anli": {
+        "options": [
+            "contradiction",
+            "entailment",
+            "neutral"
+        ]
+    },
+    "art": {
+        "options": [
+            "hypothesis 1",
+            "hypothesis 2"
+        ]
+    },
+    "biomrc": {
+        "options": [
+            "@entity0",
+            "@entity1",
+            "@entity10",
+            "@entity11",
+            "@entity12",
+            "@entity13",
+            "@entity14",
+            "@entity15",
+            "@entity16",
+            "@entity17",
+            "@entity18",
+            "@entity2",
+            "@entity3",
+            "@entity4",
+            "@entity5",
+            "@entity6",
+            "@entity7",
+            "@entity8",
+            "@entity9"
+        ]
+    },
+    "blimp-anaphor_number_agreement": {
+        "options": [
+            "sentence 1",
+            "sentence 2"
+        ]
+    },
+    "blimp-ellipsis_n_bar_2": {
+        "options": [
+            "sentence 1",
+            "sentence 2"
+        ]
+    },
+    "blimp-sentential_negation_npi_licensor_present": {
+        "options": [
+            "sentence 1",
+            "sentence 2"
+        ]
+    },
+    "blimp-sentential_negation_npi_scope": {
+        "options": [
+            "sentence 1",
+            "sentence 2"
+        ]
+    },
+    "boolq": {
+        "options": [
+            "no",
+            "yes"
+        ]
+    },
+    "circa": {
+        "options": [
+            "In the middle, neither yes nor no",
+            "No",
+            "Other",
+            "Yes",
+            "Yes, subject to some conditions"
+        ]
+    },
+    "climate_fever": {
+        "options": [
+            "Disputed",
+            "Not enough info",
+            "Refutes",
+            "Supports"
+        ]
+    },
+    "codah": {
+        "options": [
+            "found inner peace.",
+            "walked inside and bought a lotto ticket.",
+            "stuck around the gas pump for a while and had a smoke.",
+            "asked the cashier to help him rob a bank."
+        ]
+    },
+    "commonsense_qa": {
+        "options": [
+            "bank",
+            "library",
+            "department store",
+            "mall",
+            "new york"
+        ]
+    },
+    "cosmos_qa": {
+        "options": [
+            "If he gets married in the church he wo nt have to get a divorce .",
+            "He wants to get married to a different person .",
+            "He wants to know if he does nt like this girl can he divorce her ?",
+            "None of the above choices ."
+        ]
+    },
+    "crows_pairs": {
+        "options": [
+            "sentence 1",
+            "sentence 2"
+        ]
+    },
+    "dbpedia_14": {
+        "options": [
+            "Album",
+            "Animal",
+            "Artist",
+            "Athlete",
+            "Building",
+            "Company",
+            "EducationalInstitution",
+            "Film",
+            "MeanOfTransportation",
+            "NaturalPlace",
+            "OfficeHolder",
+            "Plant",
+            "Village",
+            "WrittenWork"
+        ]
+    },
+    "discovery": {
+        "options": [
+            "[no-conn]",
+            "absolutely,",
+            "accordingly",
+            "actually,",
+            "additionally",
+            "admittedly,",
+            "afterward",
+            "again,",
+            "already,",
+            "also,",
+            "alternately,",
+            "alternatively",
+            "although,",
+            "altogether,",
+            "amazingly,",
+            "and",
+            "anyway,",
+            "apparently,",
+            "arguably,",
+            "as_a_result,",
+            "basically,",
+            "because_of_that",
+            "because_of_this",
+            "besides,",
+            "but",
+            "by_comparison,",
+            "by_contrast,",
+            "by_doing_this,",
+            "by_then",
+            "certainly,",
+            "clearly,",
+            "coincidentally,",
+            "collectively,",
+            "consequently",
+            "conversely",
+            "curiously,",
+            "currently,",
+            "elsewhere,",
+            "especially,",
+            "essentially,",
+            "eventually,",
+            "evidently,",
+            "finally,",
+            "first,",
+            "firstly,",
+            "for_example",
+            "for_instance",
+            "fortunately,",
+            "frankly,",
+            "frequently,",
+            "further,",
+            "furthermore",
+            "generally,",
+            "gradually,",
+            "happily,",
+            "hence,",
+            "here,",
+            "historically,",
+            "honestly,",
+            "hopefully,",
+            "however",
+            "ideally,",
+            "immediately,",
+            "importantly,",
+            "in_contrast,",
+            "in_fact,",
+            "in_other_words",
+            "in_particular,",
+            "in_short,",
+            "in_sum,",
+            "in_the_end,",
+            "in_the_meantime,",
+            "in_turn,",
+            "incidentally,",
+            "increasingly,",
+            "indeed,",
+            "inevitably,",
+            "initially,",
+            "instead,",
+            "interestingly,",
+            "ironically,",
+            "lastly,",
+            "lately,",
+            "later,",
+            "likewise,",
+            "locally,",
+            "luckily,",
+            "maybe,",
+            "meaning,",
+            "meantime,",
+            "meanwhile,",
+            "moreover",
+            "mostly,",
+            "namely,",
+            "nationally,",
+            "naturally,",
+            "nevertheless",
+            "next,",
+            "nonetheless",
+            "normally,",
+            "notably,",
+            "now,",
+            "obviously,",
+            "occasionally,",
+            "oddly,",
+            "often,",
+            "on_the_contrary,",
+            "on_the_other_hand",
+            "once,",
+            "only,",
+            "optionally,",
+            "or,",
+            "originally,",
+            "otherwise,",
+            "overall,",
+            "particularly,",
+            "perhaps,",
+            "personally,",
+            "plus,",
+            "preferably,",
+            "presently,",
+            "presumably,",
+            "previously,",
+            "probably,",
+            "rather,",
+            "realistically,",
+            "really,",
+            "recently,",
+            "regardless,",
+            "remarkably,",
+            "sadly,",
+            "second,",
+            "secondly,",
+            "separately,",
+            "seriously,",
+            "significantly,",
+            "similarly,",
+            "simultaneously",
+            "slowly,",
+            "so,",
+            "sometimes,",
+            "soon,",
+            "specifically,",
+            "still,",
+            "strangely,",
+            "subsequently,",
+            "suddenly,",
+            "supposedly,",
+            "surely,",
+            "surprisingly,",
+            "technically,",
+            "thankfully,",
+            "then,",
+            "theoretically,",
+            "thereafter,",
+            "thereby,",
+            "therefore",
+            "third,",
+            "thirdly,",
+            "this,",
+            "though,",
+            "thus,",
+            "together,",
+            "traditionally,",
+            "truly,",
+            "truthfully,",
+            "typically,",
+            "ultimately,",
+            "undoubtedly,",
+            "unfortunately,",
+            "unsurprisingly,",
+            "usually,",
+            "well,",
+            "yet,"
+        ]
+    },
+    "dream": {
+        "options": [
+            "To teach a different textbook.",
+            "To change her job.",
+            "To learn a different textbook."
+        ]
+    },
+    "emo": {
+        "options": [
+            "angry",
+            "happy",
+            "others",
+            "sad"
+        ]
+    },
+    "emotion": {
+        "options": [
+            "anger",
+            "fear",
+            "joy",
+            "love",
+            "sadness",
+            "surprise"
+        ]
+    },
+    "ethos-directed_vs_generalized": {
+        "options": [
+            "directed",
+            "generalied"
+        ]
+    },
+    "ethos-disability": {
+        "options": [
+            "false",
+            "true"
+        ]
+    },
+    "ethos-gender": {
+        "options": [
+            "false",
+            "true"
+        ]
+    },
+    "ethos-national_origin": {
+        "options": [
+            "false",
+            "true"
+        ]
+    },
+    "ethos-race": {
+        "options": [
+            "false",
+            "true"
+        ]
+    },
+    "ethos-religion": {
+        "options": [
+            "false",
+            "true"
+        ]
+    },
+    "ethos-sexual_orientation": {
+        "options": [
+            "false",
+            "true"
+        ]
+    },
+    "financial_phrasebank": {
+        "options": [
+            "negative",
+            "neutral",
+            "positive"
+        ]
+    },
+    "glue-cola": {
+        "options": [
+            "acceptable",
+            "unacceptable"
+        ]
+    },
+    "glue-mnli": {
+        "options": [
+            "contradiction",
+            "entailment",
+            "neutral"
+        ]
+    },
+    "glue-mrpc": {
+        "options": [
+            "equivalent",
+            "not_equivalent"
+        ]
+    },
+    "glue-qnli": {
+        "options": [
+            "entailment",
+            "not_entailment"
+        ]
+    },
+    "glue-qqp": {
+        "options": [
+            "duplicate",
+            "not_duplicate"
+        ]
+    },
+    "glue-rte": {
+        "options": [
+            "entailment",
+            "not_entailment"
+        ]
+    },
+    "glue-sst2": {
+        "options": [
+            "negative",
+            "positive"
+        ]
+    },
+    "glue-wnli": {
+        "options": [
+            "entailment",
+            "not_entailment"
+        ]
+    },
+    "google_wellformed_query": {
+        "options": [
+            "not well-formed",
+            "well-formed"
+        ]
+    },
+    "hate_speech18": {
+        "options": [
+            "hate",
+            "noHate"
+        ]
+    },
+    "hate_speech_offensive": {
+        "options": [
+            "hate speech",
+            "neither",
+            "offensive language"
+        ]
+    },
+    "hatexplain": {
+        "options": [
+            "hatespeech",
+            "normal",
+            "offensive"
+        ]
+    },
+    "health_fact": {
+        "options": [
+            "false",
+            "mixture",
+            "true",
+            "unproven"
+        ]
+    },
+    "hellaswag": {
+        "options": [
+            "is using wrap to wrap a pair of skis.",
+            "is ripping level tiles off.",
+            "is holding a rubik's cube.",
+            "starts pulling up roofing on a roof."
+        ]
+    },
+    "imdb": {
+        "options": [
+            "negative",
+            "positive"
+        ]
+    },
+    "kilt_fever": {
+        "options": [
+            "REFUTES",
+            "SUPPORTS"
+        ]
+    },
+    "liar": {
+        "options": [
+            "barely-true",
+            "false",
+            "half-true",
+            "mostly-true",
+            "pants-fire",
+            "true"
+        ]
+    },
+    "mc_taco": {
+        "options": [
+            "no",
+            "yes"
+        ]
+    },
+    "medical_questions_pairs": {
+        "options": [
+            "Dissimilar",
+            "Similar"
+        ]
+    },
+    "numer_sense": {
+        "options": [
+            "eight",
+            "five",
+            "four",
+            "nine",
+            "no",
+            "one",
+            "seven",
+            "six",
+            "ten",
+            "three",
+            "two",
+            "zero"
+        ]
+    },
+    "onestop_english": {
+        "options": [
+            "advance",
+            "elementary",
+            "intermediate"
+        ]
+    },
+    "openbookqa": {
+        "options": [
+            "Deep sea animals",
+            "fish",
+            "Long Sea Fish",
+            "Far Sea Animals"
+        ]
+    },
+    "paws": {
+        "options": [
+            "duplicate",
+            "not_duplicate"
+        ]
+    },
+    "piqa": {
+        "options": [
+            "0",
+            "1"
+        ]
+    },
+    "poem_sentiment": {
+        "options": [
+            "mixed",
+            "negative",
+            "no_impact",
+            "positive"
+        ]
+    },
+    "qasc": {
+        "options": [
+            "sand",
+            "occurs over a wide range",
+            "forests",
+            "Global warming",
+            "rapid changes occur",
+            "local weather conditions",
+            "measure of motion",
+            "city life"
+        ]
+    },
+    "quail": {
+        "options": [
+            "about 10 minutes",
+            "about 2 hours",
+            "not enough information",
+            "All day"
+        ]
+    },
+    "quarel": {
+        "options": [
+            "marble floor",
+            "wet floor"
+        ]
+    },
+    "quartz-no_knowledge": {
+        "options": [
+            "decrease",
+            "increase"
+        ]
+    },
+    "quartz-with_knowledge": {
+        "options": [
+            "decrease",
+            "increase"
+        ]
+    },
+    "race-high": {
+        "options": [
+            "affected only the companies doing business within state lines",
+            "sought to eliminate monopolies in favor of competition in the market-place",
+            "promoted trade with a large number of nations",
+            "provides a financial advantage to the buyer"
+        ]
+    },
+    "race-middle": {
+        "options": [
+            "English",
+            "Japanese",
+            "American",
+            "Chinese"
+        ]
+    },
+    "rotten_tomatoes": {
+        "options": [
+            "negative",
+            "positive"
+        ]
+    },
+    "sciq": {
+        "options": [
+            "carotenoids",
+            "nucleotides",
+            "proteins",
+            "genes"
+        ]
+    },
+    "scitail": {
+        "options": [
+            "entailment",
+            "neutral"
+        ]
+    },
+    "sick": {
+        "options": [
+            "contradiction",
+            "entailment",
+            "neutral"
+        ]
+    },
+    "sms_spam": {
+        "options": [
+            "ham",
+            "spam"
+        ]
+    },
+    "social_i_qa": {
+        "options": [
+            "make a new plan",
+            "Go home and see Riley",
+            "Find somewhere to go"
+        ]
+    },
+    "superglue-cb": {
+        "options": [
+            "contradiction",
+            "entailment",
+            "neutral"
+        ]
+    },
+    "superglue-copa": {
+        "options": [
+            "The toilet filled with water.",
+            "Water flowed from the spout."
+        ]
+    },
+    "superglue-multirc": {
+        "options": [
+            "No",
+            "Yes",
+            "Less the mass, less the force applied",
+            "It depends on the shape of the baseball"
+        ]
+    },
+    "superglue-rte": {
+        "options": [
+            "entailment",
+            "not_entailment"
+        ]
+    },
+    "superglue-wic": {
+        "options": [
+            "false",
+            "true"
+        ]
+    },
+    "superglue-wsc": {
+        "options": [
+            "false",
+            "true"
+        ]
+    },
+    "swag": {
+        "options": [
+            "pats her shoulder, then saunters toward someone.",
+            "turns with two students.",
+            "walks slowly towards someone.",
+            "wheels around as her dog thunders out."
+        ]
+    },
+    "tab_fact": {
+        "options": [
+            "entailed",
+            "refuted"
+        ]
+    },
+    "trec": {
+        "options": [
+            "ABBR",
+            "DESC",
+            "ENTY",
+            "HUM",
+            "LOC",
+            "NUM"
+        ]
+    },
+    "trec-finegrained": {
+        "options": [
+            "abb",
+            "animal",
+            "body",
+            "city",
+            "code",
+            "color",
+            "count",
+            "country",
+            "cremat",
+            "currency",
+            "date",
+            "def",
+            "desc",
+            "dismed",
+            "dist",
+            "event",
+            "exp",
+            "food",
+            "gr",
+            "ind",
+            "instru",
+            "lang",
+            "letter",
+            "manner",
+            "money",
+            "mount",
+            "ord",
+            "other",
+            "perc",
+            "period",
+            "plant",
+            "product",
+            "reason",
+            "religion",
+            "speed",
+            "sport",
+            "state",
+            "substance",
+            "symbol",
+            "techmeth",
+            "temp",
+            "termeq",
+            "title",
+            "veh",
+            "volsize",
+            "weight",
+            "word"
+        ]
+    },
+    "tweet_eval-emoji": {
+        "options": [
+            "\u2600",
+            "\u2728",
+            "\u2764",
+            "\ud83c\uddfa\ud83c\uddf8",
+            "\ud83c\udf84",
+            "\ud83d\udc95",
+            "\ud83d\udc99",
+            "\ud83d\udc9c",
+            "\ud83d\udcaf",
+            "\ud83d\udcf7",
+            "\ud83d\udcf8",
+            "\ud83d\udd25",
+            "\ud83d\ude01",
+            "\ud83d\ude02",
+            "\ud83d\ude09",
+            "\ud83d\ude0a",
+            "\ud83d\ude0d",
+            "\ud83d\ude0e",
+            "\ud83d\ude18",
+            "\ud83d\ude1c"
+        ]
+    },
+    "tweet_eval-emotion": {
+        "options": [
+            "anger",
+            "joy",
+            "optimism",
+            "sadness"
+        ]
+    },
+    "tweet_eval-hate": {
+        "options": [
+            "hate",
+            "non-hate"
+        ]
+    },
+    "tweet_eval-irony": {
+        "options": [
+            "0",
+            "1",
+            "hate",
+            "non-irony"
+        ]
+    },
+    "tweet_eval-offensive": {
+        "options": [
+            "hate",
+            "non-offensive"
+        ]
+    },
+    "tweet_eval-sentiment": {
+        "options": [
+            "negative",
+            "neutral",
+            "positive"
+        ]
+    },
+    "tweet_eval-stance_abortion": {
+        "options": [
+            "against",
+            "favor",
+            "none"
+        ]
+    },
+    "tweet_eval-stance_atheism": {
+        "options": [
+            "against",
+            "favor",
+            "none"
+        ]
+    },
+    "tweet_eval-stance_climate": {
+        "options": [
+            "against",
+            "favor",
+            "none"
+        ]
+    },
+    "tweet_eval-stance_feminist": {
+        "options": [
+            "against",
+            "favor",
+            "none"
+        ]
+    },
+    "tweet_eval-stance_hillary": {
+        "options": [
+            "against",
+            "favor",
+            "none"
+        ]
+    },
+    "unifiedqa:ai2_science_middle": {
+        "options": [
+            "osmosis",
+            "diffusion",
+            "cell activity",
+            "cell transport"
+        ]
+    },
+    "unifiedqa:mctest": {
+        "options": [
+            "Jessie Bear",
+            "no one",
+            "Lion",
+            "Tiger"
+        ]
+    },
+    "unifiedqa:openbookqa": {
+        "options": [
+            "make more phone calls",
+            "quit eating lunch out",
+            "buy less with monopoly money",
+            "have lunch with friends"
+        ]
+    },
+    "unifiedqa:openbookqa_with_ir": {
+        "options": [
+            "make more phone calls",
+            "quit eating lunch out",
+            "buy less with monopoly money",
+            "have lunch with friends"
+        ]
+    },
+    "unifiedqa:qasc": {
+        "options": [
+            "sand",
+            "occurs over a wide range",
+            "forests",
+            "Global warming",
+            "rapid changes occur",
+            "local weather conditions",
+            "measure of motion",
+            "city life"
+        ]
+    },
+    "unifiedqa:qasc_with_ir": {
+        "options": [
+            "sand",
+            "occurs over a wide range",
+            "forests",
+            "Global warming",
+            "rapid changes occur",
+            "local weather conditions",
+            "measure of motion",
+            "city life"
+        ]
+    },
+    "wiki_qa": {
+        "options": [
+            "false",
+            "true"
+        ]
+    },
+    "wino_grande": {
+        "options": [
+            "Sarah",
+            "Maria"
+        ]
+    },
+    "wiqa": {
+        "options": [
+            "more",
+            "less",
+            "no effect"
+        ]
+    },
+    "yahoo_answers_topics": {
+        "options": [
+            "Business & Finance",
+            "Computers & Internet",
+            "Education & Reference",
+            "Entertainment & Music",
+            "Family & Relationships",
+            "Health",
+            "Politics & Government",
+            "Science & Mathematics",
+            "Society & Culture",
+            "Sports"
+        ]
+    },
+    "yelp_polarity": {
+        "options": [
+            "negative",
+            "positive"
+        ]
+    },
+    "yelp_review_full": {
+        "options": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5"
+        ]
+    }
+}

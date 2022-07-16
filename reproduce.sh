@@ -14,14 +14,19 @@ model=$5
 if [ -z "$model" ]; then
     model="model.pt"
 fi
-if [[ $method == *"metaicl" || $method == *"multitask-zero" ]] ; then
-    checkpoint="checkpoints/${method}/${task}/${model}"
+if [ -f $checkpoint ] ; then # Just use the absolute path
+    checkpoint="${model}"
     out_dir="checkpoints/${method}/${task}"
-    if [[ ! -f $checkpoint ]] ; then
-        python -m utils.download --checkpoints --setting $task --method $method
-    fi
 else
-    out_dir="checkpoints/lm"
+    if [[ $method == *"metaicl" || $method == *"multitask-zero" ]] ; then
+        checkpoint="checkpoints/${method}/${task}/${model}"
+        out_dir="checkpoints/${method}/${task}"
+        if [[ ! -f $checkpoint ]] ; then
+            python -m utils.download --checkpoints --setting $task --method $method
+        fi
+    else
+        out_dir="checkpoints/lm"
+    fi
 fi
 echo "Using model from checkpoint: $checkpoint"
 if [[ $method == "metaicl" ]] ; then
