@@ -15,7 +15,7 @@ from datasets import load_dataset
 
 def load_data(task, split, k, seed=0, config_split=None, datasets=None,
               is_null=False):
-    if task.startwith('huggingface:'):
+    if task.startswith('huggingface:'):
         hf_dataset_path = task[len('huggingface:'):]
         data = []
         dataset = load_dataset(hf_dataset_path)
@@ -35,6 +35,9 @@ def load_data(task, split, k, seed=0, config_split=None, datasets=None,
         for dataset in datasets:
             data_path = os.path.join("data", dataset,
                                     "{}_{}_{}_{}.jsonl".format(dataset, k, seed, split))
+
+            print('data path = ', data_path)
+
             with open(data_path, "r") as f:
                 for line in f:
                     dp = json.loads(line)

@@ -87,6 +87,8 @@ def main(logger, args):
         dev_data = load_data(args.task, args.split, args.k, seed=seed, config_split=config_split,
                              datasets=None if args.dataset is None else args.dataset.split(","), is_null=args.is_null)
 
+        # print(len(dev_data), dev_data[0])
+
         if args.use_random_english_words:
             from english_words import english_words_set
             english_words_set = sorted(english_words_set)
@@ -112,14 +114,14 @@ def main(logger, args):
             assert not args.use_demonstrations or len(curr_train_data)==args.k, \
                     (args.use_demonstrations, len(curr_train_data), args.k)
 
-            config_file = "config/tasks/{}.json".format(test_task)
-            assert os.path.exists(config_file), config_file
-            with open(config_file, "r") as f:
-                config = json.load(f)
-            is_classification = config["task_type"]=="classification"
-            if is_classification:
-                options = curr_dev_data[0]["options"]
-                assert np.all([d["options"]==options for d in curr_dev_data])
+            # config_file = "config/tasks/{}.json".format(test_task)
+            # assert os.path.exists(config_file), config_file
+            # with open(config_file, "r") as f:
+            #     config = json.load(f)
+            is_classification = False  #  config["task_type"]=="classification"
+            # if is_classification:
+            #     options = curr_dev_data[0]["options"]
+            #     assert np.all([d["options"]==options for d in curr_dev_data])
 
             if args.use_random_english_words:
                 # create a mapping
@@ -266,9 +268,11 @@ if __name__=='__main__':
         handlers.append(logging.FileHandler(args.log_file))
     logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
                         datefmt='%m/%d/%Y %H:%M:%S',
-                        level=logging.INFO,
+                        level=logging.DEBUG,
                         handlers=handlers)
     logger = logging.getLogger(__name__)
+    logger.setLevel(logging.ERROR)
+
     logger.info(args)
 
     main(logger, args)
